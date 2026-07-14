@@ -20,7 +20,7 @@ export function HeroFeatureCards() {
       {heroFeatureCards.map((card) => (
         <li
           key={card.id}
-          className={`col-span-1 flex flex-col justify-between gap-6 rounded-[24px] p-5 first:col-span-2 laptop:first:col-span-1 ${variantClasses[card.variant]}`}
+          className={`col-span-1 flex flex-col justify-between gap-6 rounded-[24px] p-5 transition-transform duration-300 first:col-span-2 hover:-translate-y-1 laptop:first:col-span-1 ${variantClasses[card.variant]}`}
         >
           <div>
             <p className="text-[15px] font-semibold leading-snug">

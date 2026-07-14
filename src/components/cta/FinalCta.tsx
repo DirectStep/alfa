@@ -26,7 +26,7 @@ export function FinalCta() {
               </div>
             </div>
 
-            <div className="relative mx-auto h-[280px] w-[240px] shrink-0 laptop:h-[340px] laptop:w-[300px]">
+            <div className="animate-float-slow relative mx-auto h-[280px] w-[240px] shrink-0 laptop:h-[340px] laptop:w-[300px]">
               <Image
                 src="/assets/hero/hero-composition-desktop.png"
                 alt=""

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { HeroFeatureCards } from "./HeroFeatureCards";
+import { ParallaxLayer } from "@/components/ui/ParallaxLayer";
 
 export function HeroArtwork() {
   return (
@@ -12,22 +13,26 @@ export function HeroArtwork() {
           backgroundSize: "18px 18px",
         }}
       >
-        <Image
-          src="/assets/hero/hero-composition-mobile.png"
-          alt="Молодая предпринимательница в фирменной красной куртке Альфа Дело среди букв, звезды и орбиты"
-          fill
-          priority
-          sizes="(min-width: 1280px) 0px, 100vw"
-          className="object-contain object-center laptop:hidden"
-        />
-        <Image
-          src="/assets/hero/hero-composition-desktop.png"
-          alt="Молодая предпринимательница в фирменной красной куртке Альфа Дело среди букв, звезды и орбиты"
-          fill
-          priority
-          sizes="(min-width: 1280px) 45vw, 0px"
-          className="hidden object-contain object-center laptop:block"
-        />
+        <div className="animate-float-slow absolute inset-0">
+          <ParallaxLayer strength={5}>
+            <Image
+              src="/assets/hero/hero-composition-mobile.png"
+              alt="Молодая предпринимательница в фирменной красной куртке Альфа Дело среди букв, звезды и орбиты"
+              fill
+              priority
+              sizes="(min-width: 1280px) 0px, 100vw"
+              className="object-contain object-center laptop:hidden"
+            />
+            <Image
+              src="/assets/hero/hero-composition-desktop.png"
+              alt="Молодая предпринимательница в фирменной красной куртке Альфа Дело среди букв, звезды и орбиты"
+              fill
+              priority
+              sizes="(min-width: 1280px) 45vw, 0px"
+              className="hidden object-contain object-center laptop:block"
+            />
+          </ParallaxLayer>
+        </div>
       </div>
 
       <HeroFeatureCards />
