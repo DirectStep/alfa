@@ -1,6 +1,6 @@
-import { ArrowUpRight } from "lucide-react";
 import { heroFeatureCards } from "@/data/heroFeatureCards";
 import { AvatarStack } from "@/components/ui/AvatarStack";
+import { RoundArrowButton } from "@/components/ui/RoundArrowButton";
 
 const variantClasses = {
   lavender: "bg-lavender text-text-primary",
@@ -39,15 +39,14 @@ export function HeroFeatureCards() {
             ) : (
               <span />
             )}
-            <span
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-full ${
+            <RoundArrowButton
+              size={36}
+              className={
                 card.variant === "black"
                   ? "bg-white text-black"
                   : "bg-black/10 text-current"
-              }`}
-            >
-              <ArrowUpRight size={16} />
-            </span>
+              }
+            />
           </div>
         </li>
       ))}
