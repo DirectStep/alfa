@@ -35,7 +35,7 @@ export function ParallaxLayer({
       style={{ x: springX, y: springY }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="h-full w-full"
+      className="relative h-full w-full"
     >
       {children}
     </motion.div>

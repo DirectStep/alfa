@@ -16,18 +16,18 @@ const communityAvatars = [
 
 export function HeroFeatureCards() {
   return (
-    <ul className="grid grid-cols-2 gap-4 laptop:flex laptop:w-[230px] laptop:shrink-0 laptop:flex-col">
+    <ul className="grid grid-cols-2 gap-3 laptop:flex laptop:h-full laptop:flex-col">
       {heroFeatureCards.map((card) => (
         <li
           key={card.id}
-          className={`col-span-1 flex flex-col justify-between gap-6 rounded-[24px] p-5 transition-transform duration-300 first:col-span-2 hover:-translate-y-1 laptop:first:col-span-1 ${variantClasses[card.variant]}`}
+          className={`col-span-1 flex flex-col justify-between gap-5 rounded-[24px] p-5 transition-transform duration-300 first:col-span-2 hover:-translate-y-1 laptop:col-span-1 laptop:flex-1 ${variantClasses[card.variant]}`}
         >
           <div>
-            <p className="text-[15px] font-semibold leading-snug">
+            <p className="text-[17px] font-bold leading-snug">
               {card.title}
             </p>
             {card.description && (
-              <p className="mt-2 text-[13px] opacity-70 leading-snug">
+              <p className="mt-2 text-[13.5px] opacity-70 leading-snug">
                 {card.description}
               </p>
             )}
@@ -35,12 +35,12 @@ export function HeroFeatureCards() {
 
           <div className="flex items-center justify-between">
             {card.showAvatars ? (
-              <AvatarStack avatars={communityAvatars} size={32} />
+              <AvatarStack avatars={communityAvatars} size={40} />
             ) : (
               <span />
             )}
             <RoundArrowButton
-              size={36}
+              size={40}
               className={
                 card.variant === "black"
                   ? "bg-white text-black"

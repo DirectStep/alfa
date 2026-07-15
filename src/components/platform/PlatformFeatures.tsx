@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {
   Users,
   BookOpen,
@@ -19,29 +20,66 @@ const icons: Record<string, LucideIcon> = {
   profile: UserCircle,
 };
 
+const variantClasses = {
+  red: "bg-alfa-red text-white",
+  lavender: "bg-lavender text-text-primary",
+  soft: "bg-surface text-text-primary",
+  black: "bg-black text-white",
+  pink: "bg-pink text-text-primary",
+  "light-green": "bg-light-green text-text-primary",
+} as const;
+
+const iconWrapClasses = {
+  red: "bg-white/15 text-white",
+  lavender: "bg-white/50 text-alfa-red",
+  soft: "bg-white text-alfa-red",
+  black: "bg-white/10 text-white",
+  pink: "bg-white/40 text-text-primary",
+  "light-green": "bg-white/50 text-text-primary",
+} as const;
+
 export function PlatformFeatures() {
   return (
-    <section id="platform" className="py-10 laptop:py-14">
+    <section id="platform" className="pt-20 pb-10 laptop:pt-24 laptop:pb-14">
       <Container>
-        <h2 className="text-[32px] font-bold laptop:text-[40px]">
+        <h2 className="text-[36px] font-bold laptop:text-[48px]">
           Что внутри платформы
         </h2>
 
-        <ul className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 laptop:grid-cols-3">
+        <ul className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 laptop:grid-cols-3 laptop:gap-5">
           {platformFeatures.map((feature) => {
             const Icon = icons[feature.iconKey];
             return (
               <li
                 key={feature.id}
-                className="rounded-[24px] border border-border bg-white p-6"
+                className={`relative flex min-h-[250px] flex-col justify-between overflow-hidden rounded-[26px] p-6 transition-transform duration-300 hover:-translate-y-1 laptop:min-h-[270px] ${variantClasses[feature.variant]}`}
               >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface">
-                  <Icon size={20} className="text-alfa-red" />
-                </span>
-                <h3 className="mt-4 text-[19px] font-bold">{feature.title}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-text-secondary">
-                  {feature.description}
-                </p>
+                <div className="relative z-10 max-w-[65%]">
+                  <h3 className="text-[21px] font-bold leading-snug">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-2 text-[14px] leading-relaxed opacity-75">
+                    {feature.description}
+                  </p>
+                </div>
+
+                {feature.image ? (
+                  <div className="absolute -right-2 bottom-0 h-[88%] w-[55%]">
+                    <Image
+                      src={feature.image}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1280px) 22vw, (min-width: 768px) 33vw, 60vw"
+                      className="object-contain object-bottom"
+                    />
+                  </div>
+                ) : (
+                  <span
+                    className={`absolute bottom-5 right-5 inline-flex h-24 w-24 items-center justify-center rounded-full ${iconWrapClasses[feature.variant]}`}
+                  >
+                    <Icon size={44} strokeWidth={1.6} />
+                  </span>
+                )}
               </li>
             );
           })}

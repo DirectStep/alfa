@@ -19,18 +19,16 @@ export function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-colors duration-300 ${
-        scrolled
-          ? "bg-white/80 backdrop-blur-md border-b border-border"
-          : "bg-transparent border-b border-transparent"
+      className={`sticky top-0 z-50 border-b border-border transition-colors duration-300 ${
+        scrolled ? "bg-white/80 backdrop-blur-md" : "bg-white"
       }`}
     >
-      <Container className="flex h-20 items-center justify-between">
-        <a href="#top" className="text-lg font-bold tracking-tight">
+      <Container className="flex h-[74px] items-center justify-between">
+        <a href="#top" className="text-[19px] font-bold tracking-tight">
           Альфа Дело
         </a>
 
-        <nav className="hidden laptop:flex items-center gap-8">
+        <nav className="hidden laptop:flex items-center gap-6">
           {navLinks.map((link) => (
             <a
               key={link.href}
@@ -43,7 +41,7 @@ export function Header() {
         </nav>
 
         <div className="hidden laptop:block">
-          <Button variant="primary">Присоединиться</Button>
+          <Button variant="primary" size="sm">Присоединиться</Button>
         </div>
 
         <button
