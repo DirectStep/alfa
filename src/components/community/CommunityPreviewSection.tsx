@@ -29,7 +29,7 @@ export function CommunityPreviewSection() {
 
           <div className="divide-y divide-black/20 border-y border-black/20">
             {formats.map((item) => (
-              <a key={item.title} href="/concept" className="group grid min-h-[128px] grid-cols-[38px_1fr_auto] items-center gap-4 py-5 sm:grid-cols-[46px_1fr_auto] sm:gap-6">
+              <a key={item.title} href="https://directstep.github.io/concept/" className="group grid min-h-[128px] grid-cols-[38px_1fr_auto] items-center gap-4 py-5 sm:grid-cols-[46px_1fr_auto] sm:gap-6">
                 <span className={`${item.color} h-8 w-8 skew-x-[-20deg] sm:h-10 sm:w-10`} aria-hidden />
                 <span>
                   <strong className="block text-[22px] leading-none tracking-[-0.025em] sm:text-[26px]">{item.title}</strong>

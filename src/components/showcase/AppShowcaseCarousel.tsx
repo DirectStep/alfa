@@ -9,9 +9,9 @@ import { assetPath } from "@/lib/assetPath";
 type Screen = { id: string; label: string; icon: LucideIcon; title: string; text: string; image: string; imageWidth: number; imageHeight: number };
 
 const screens: Screen[] = [
-  { id: "passport", label: "Паспорт проекта", icon: UserRound, title: "Весь прогресс проекта — в одном профиле", text: "Цель, стадия, выполненные шаги и ближайшая задача собраны в едином рабочем контексте.", image: "/assets/prototype/passport.png", imageWidth: 1254, imageHeight: 1254 },
+  { id: "passport", label: "Паспорт проекта", icon: UserRound, title: "Весь прогресс проекта — в одном профиле", text: "Цель, стадия, выполненные шаги и ближайшая задача собраны в едином рабочем контексте.", image: "/assets/prototype/passport-v2.png", imageWidth: 1254, imageHeight: 1254 },
   { id: "ai", label: "AI-маршрут", icon: Sparkles, title: "План запуска меняется вместе с проектом", text: "Навигатор учитывает ответы, активность и результат предыдущих шагов — и предлагает следующий обоснованный шаг.", image: "/assets/prototype/ai-route.png", imageWidth: 1672, imageHeight: 941 },
-  { id: "knowledge", label: "Практические материалы", icon: BookOpen, title: "Материалы привязаны к конкретной задаче", text: "Шаблоны, разборы и короткие инструкции появляются в маршруте тогда, когда их можно применить.", image: "/assets/prototype/materials.png", imageWidth: 1254, imageHeight: 1254 },
+  { id: "knowledge", label: "Практические материалы", icon: BookOpen, title: "Материалы привязаны к конкретной задаче", text: "Шаблоны, разборы и короткие инструкции появляются в маршруте тогда, когда их можно применить.", image: "/assets/prototype/materials-v2.png", imageWidth: 1254, imageHeight: 1254 },
   { id: "finance", label: "Финансовое действие", icon: Wallet, title: "От рекомендации — сразу к банковскому действию", text: "Приём оплаты, счёт или выплаты подключаются в приложении Альфа-Банка без разрыва пользовательского сценария.", image: "/assets/prototype/finance.png", imageWidth: 1672, imageHeight: 941 },
 ];
 
@@ -72,7 +72,13 @@ export function AppShowcaseCarousel() {
               alt={`Интерфейс прототипа: ${active.label}`}
               width={active.imageWidth}
               height={active.imageHeight}
-              className={`relative z-10 max-h-[500px] w-full object-contain drop-shadow-[0_28px_45px_rgba(0,0,0,0.2)] ${active.id === "passport" || active.id === "knowledge" ? "translate-y-9" : ""}`}
+              className={`relative z-10 max-h-[500px] w-full object-contain drop-shadow-[0_28px_45px_rgba(0,0,0,0.2)] ${
+                active.id === "passport" || active.id === "knowledge"
+                  ? "translate-y-9"
+                  : active.id === "ai"
+                    ? "w-[132%] max-w-none -rotate-2 sm:w-[118%] laptop:w-full laptop:max-w-full laptop:rotate-0"
+                    : "w-[132%] max-w-none rotate-2 sm:w-[118%] laptop:w-full laptop:max-w-full laptop:rotate-0"
+              }`}
             />
           </div>
         </div>

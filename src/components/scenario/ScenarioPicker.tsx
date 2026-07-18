@@ -47,7 +47,7 @@ export function ScenarioPicker() {
             <p className="relative z-10 text-[12px] font-bold uppercase tracking-[0.08em]">Твой первый маршрут</p>
             <h3 className="relative z-10 mt-7 max-w-[560px] text-[32px] font-bold leading-[1.02] tracking-[-0.035em] sm:text-[40px]">{stage.recommendation}</h3>
             <p className="relative z-10 mt-4 max-w-[450px] text-[16px] leading-6">{industryFocus[industry.id]}</p>
-            <a href="#how-it-works" className="relative z-10 mt-auto inline-flex w-fit items-center gap-2 rounded-[13px] bg-black px-5 py-3.5 text-[14px] font-bold text-white transition-transform hover:-translate-y-0.5">Показать маршрут <ArrowRight size={18} /></a>
+            <a href="https://directstep.github.io/concept/" className="relative z-10 mt-auto inline-flex w-fit items-center gap-2 rounded-[13px] bg-black px-5 py-3.5 text-[14px] font-bold text-white transition-transform hover:-translate-y-0.5">Показать маршрут <ArrowRight size={18} /></a>
           </div>
         </div>
       </Container>
