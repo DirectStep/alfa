@@ -72,12 +72,12 @@ export function AppShowcaseCarousel() {
               alt={`Интерфейс прототипа: ${active.label}`}
               width={active.imageWidth}
               height={active.imageHeight}
-              className={`relative z-10 max-h-[500px] w-full object-contain drop-shadow-[0_28px_45px_rgba(0,0,0,0.2)] ${
+              className={`relative z-10 max-h-[500px] object-contain drop-shadow-[0_28px_45px_rgba(0,0,0,0.2)] ${
                 active.id === "passport" || active.id === "knowledge"
-                  ? "translate-y-9"
+                  ? "w-full translate-y-14"
                   : active.id === "ai"
-                    ? "w-[132%] max-w-none -rotate-2 sm:w-[118%] laptop:w-full laptop:max-w-full laptop:rotate-0"
-                    : "w-[132%] max-w-none rotate-2 sm:w-[118%] laptop:w-full laptop:max-w-full laptop:rotate-0"
+                    ? "w-[145%] max-w-none -rotate-2 sm:w-[130%] laptop:w-full laptop:max-w-full laptop:rotate-0"
+                    : "w-[145%] max-w-none rotate-2 sm:w-[130%] laptop:w-full laptop:max-w-full laptop:rotate-0"
               }`}
             />
           </div>
