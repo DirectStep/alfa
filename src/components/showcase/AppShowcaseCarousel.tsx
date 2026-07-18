@@ -76,8 +76,8 @@ export function AppShowcaseCarousel() {
                 active.id === "passport" || active.id === "knowledge"
                   ? "w-full translate-y-14"
                   : active.id === "ai"
-                    ? "w-[131%] max-w-none -rotate-2 sm:w-[117%] laptop:w-full laptop:max-w-full laptop:rotate-0"
-                    : "w-[131%] max-w-none rotate-2 sm:w-[117%] laptop:w-full laptop:max-w-full laptop:rotate-0"
+                    ? "w-[128%] max-w-none -rotate-2 sm:w-[114%] laptop:w-full laptop:max-w-full laptop:rotate-0"
+                    : "w-[128%] max-w-none rotate-2 sm:w-[114%] laptop:w-full laptop:max-w-full laptop:rotate-0"
               }`}
             />
           </div>
