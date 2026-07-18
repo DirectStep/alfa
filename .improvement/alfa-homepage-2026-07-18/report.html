@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Аудит сайта «Альфа-Дело»</title>
+<style>
+  :root { --fg:#171717; --muted:#626262; --bg:#f5f5f5; --accent:#ef3124; --border:#dedede; }
+  * { box-sizing:border-box; }
+  body { max-width:920px; margin:0 auto; padding:48px 28px 80px; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  h1 { margin:0 0 8px; font-size:42px; line-height:1.08; letter-spacing:-.01em; }
+  h2 { margin:56px 0 18px; padding-bottom:10px; border-bottom:1px solid var(--border); font-size:28px; }
+  h3 { margin:0 0 14px; font-size:22px; line-height:1.2; }
+  p { margin:0 0 14px; }
+  a { color:#cc241b; }
+  img { width:100%; margin:10px 0 18px; border:1px solid var(--border); border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,.06); }
+  .tldr { margin:26px 0; padding:20px 22px; border-left:4px solid var(--accent); border-radius:8px; background:#fff; }
+  .idea { margin:28px 0; padding:26px; border:1px solid var(--border); border-radius:12px; background:#fff; box-shadow:0 4px 18px rgba(0,0,0,.04); }
+  .idea h3 { color:#111; }
+  .badge { display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; background:var(--accent); color:#fff; font-size:11px; vertical-align:middle; }
+  blockquote { margin:18px 0; padding:16px 20px; border-radius:8px; background:#f0f0f0; font-weight:650; }
+  pre { overflow:auto; padding:16px; border:1px solid var(--border); border-radius:8px; background:#f7f7f7; font:13px/1.45 Consolas,monospace; }
+  table { width:100%; border-collapse:collapse; margin:16px 0; font-size:14px; }
+  th,td { padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+  th { background:#ececec; }
+  .good { display:grid; gap:8px; margin:0; padding-left:20px; }
+  @media (max-width:640px) { body{padding:28px 16px 56px} h1{font-size:34px} .idea{padding:20px} table{display:block;overflow-x:auto} }
+</style>
+</head>
+<body>
+  <p style="color:#ef3124;font-weight:700;text-transform:uppercase;font-size:13px">Design review</p>
+  <h1>«Альфа-Дело»: ближе к цифровому стилю Альфы</h1>
+  <p style="color:var(--muted)">Аудит типографики, структуры, официальных ассетов и B2B-текстов</p>
+
+  <div class="tldr"><strong>Главный диагноз.</strong> Семейство шрифта уже правильное, но масштаб всё ещё завышен. Страница повторяет функции, однако не складывает их в маршрут «идея → проверка → запуск → первая оплата → рост».</div>
+
+  <h2>Текущее состояние</h2>
+  <img src="references/current.png" alt="Текущий первый экран">
+
+  <h2>Типографика</h2>
+  <table><thead><tr><th>Элемент</th><th>Сейчас</th><th>У Альфы</th><th>Новая шкала</th></tr></thead><tbody>
+    <tr><td>H1</td><td>76/74, 700</td><td>48/52, 700</td><td>52–56/1.08, 700</td></tr>
+    <tr><td>H2</td><td>52/54, 700</td><td>40/48, 700</td><td>40/48, 700</td></tr>
+    <tr><td>Текст</td><td>17/25</td><td>16/24</td><td>16/24</td></tr>
+    <tr><td>Кнопка</td><td>15/23, 600</td><td>14/20, 500</td><td>14/20, 500</td></tr>
+  </tbody></table>
+
+  <div class="idea"><h3>1. Один сильный B2B-тезис в hero <span class="badge">MAX IMPACT</span></h3>
+    <blockquote>От идеи до первой оплаты — с понятным планом и поддержкой Альфы</blockquote>
+    <p>Уменьшить H1, убрать три конкурирующие промокарточки, справа показать один официальный ассет и результат работы платформы.</p>
+    <pre>ЗАГОЛОВОК + короткое объяснение   | Стадия → следующий шаг
+[Составить план запуска] [Как работает] | официальный 3D-ассет</pre>
+  </div>
+
+  <div class="idea"><h3>2. Путь предпринимателя вместо каталога функций <span class="badge">MAX IMPACT</span></h3>
+    <p>Объединить повторяющиеся секции и выстроить страницу как сценарий использования.</p>
+    <pre>ИДЕЯ → ПРОВЕРКА → ЗАПУСК → ПЕРВАЯ ОПЛАТА → РОСТ
+  AI     спрос      оффер       СБП/ссылка       аналитика</pre>
+  </div>
+
+  <div class="idea"><h3>3. Официальная графика Альфы по назначению</h3>
+    <img src="references/provided-assets.png" alt="Выданные Альфа-Банком ассеты">
+    <p>Белая и светло-серая основа, красный как точечный CTA, один крупный фирменный объект на смысловую секцию. Пастельные карточки сократить.</p>
+  </div>
+
+  <div class="idea"><h3>4. Founder Passport как центр демонстрации продукта</h3>
+    <pre>FOUNDER PASSPORT              AI-РЕКОМЕНДАЦИЯ
+Стадия: запуск               1. Проверить спрос
+Прогресс: 62%                2. Подготовить оффер
+Цель: первая оплата          3. Создать ссылку</pre>
+    <p>Мокап должен объяснять механику решения, а не просто показывать пять экранов телефона.</p>
+  </div>
+
+  <div class="idea"><h3>5. Формальный B2B-тон и доказуемые формулировки</h3>
+    <table><tbody>
+      <tr><td>«Подсказывает следующий шаг»</td><td>«Составляет план запуска по вашей стадии и цели»</td></tr>
+      <tr><td>«Когда нужны инструменты Альфы»</td><td>«Финансовые инструменты на каждом этапе бизнеса»</td></tr>
+      <tr><td>«Что обсуждают»</td><td>«Практика предпринимателей»</td></tr>
+    </tbody></table>
+    <p>Фальшивые отзывы-заглушки убрать. До появления подтверждённых кейсов использовать сценарии или прогнозные KPI с подписью «цель пилота».</p>
+  </div>
+
+  <h2>Что уже работает</h2>
+  <ul class="good"><li>Правильное системное семейство шрифта.</li><li>Сценарный выбор направления и стадии.</li><li>Связь с реальными продуктами платежного бизнеса.</li><li>Узнаваемая красно-чёрная айдентика.</li><li>Адаптивная и семантическая основа.</li></ul>
+
+  <h2>Порядок внедрения</h2>
+  <table><thead><tr><th>#</th><th>Работа</th><th>Импакт</th></tr></thead><tbody>
+    <tr><td>1</td><td>Типографическая шкала + hero</td><td>Очень высокий</td></tr>
+    <tr><td>2</td><td>Новая структура и удаление повторов</td><td>Очень высокий</td></tr>
+    <tr><td>3</td><td>Официальные ассеты</td><td>Высокий</td></tr>
+    <tr><td>4</td><td>Founder Passport и продуктовый сценарий</td><td>Высокий</td></tr>
+    <tr><td>5</td><td>Редактура B2B-текстов</td><td>Высокий</td></tr>
+  </tbody></table>
+
+  <p style="margin-top:48px;color:var(--muted)">Полная аргументация и ссылки на референсы находятся в report.md рядом с этим файлом.</p>
+</body>
+</html>
