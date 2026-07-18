@@ -1,8 +1,6 @@
-import Image from "next/image";
 import { ArrowUpRight, FileText, MessageCircle, Users } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { assetPath } from "@/lib/assetPath";
 
 const formats = [
   { icon: MessageCircle, title: "Разборы реальных задач", text: "Вопросы о запуске, продажах и операциях обсуждаются в контексте конкретного проекта." },
@@ -34,8 +32,29 @@ export function CommunityPreviewSection() {
             <p className="mt-4 max-w-[520px] text-[15px] leading-6 text-white/75">Посмотрите разборы похожих запусков, скачайте шаблон расчёта и задайте уточняющий вопрос участникам из вашей сферы.</p>
             <a href="/concept" className="mt-6 inline-flex items-center gap-2 text-[14px] font-medium">Открыть прототип сообщества <ArrowUpRight size={17} /></a>
           </div>
-          <div className="relative min-h-[330px] bg-white">
-            <Image src={assetPath("/assets/official/benefit.webp")} alt="Иллюстрация цифровых возможностей Альфа-Банка" fill sizes="(min-width: 1280px) 45vw, 100vw" className="object-cover object-center" />
+          <div className="flex min-h-[330px] items-center justify-center bg-white p-6 sm:p-9">
+            <div className="w-full max-w-[540px] rounded-[26px] border border-border bg-[#f3f4f5] p-4 sm:p-5">
+              <div className="flex items-center justify-between px-1 pb-4">
+                <p className="text-[15px] font-bold text-black">Практика предпринимателей</p>
+                <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-medium text-text-secondary">E-commerce</span>
+              </div>
+              <div className="space-y-2.5">
+                {[
+                  ["АК", "Как проверить цену до запуска?", "6 ответов"],
+                  ["МТ", "Шаблон расчёта юнит-экономики", "Материал"],
+                  ["ИЛ", "Разбор первой рекламной кампании", "12 ответов"],
+                ].map(([initials, title, meta], index) => (
+                  <div key={title} className="flex items-center gap-3 rounded-[16px] bg-white p-3.5">
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${index === 1 ? "bg-[#171719] text-white" : "bg-[#ffe2df] text-alfa-red"}`}>{initials}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-black sm:text-[14px]">{title}</p>
+                      <p className="mt-1 text-[11px] text-text-secondary">{meta}</p>
+                    </div>
+                    <ArrowUpRight size={16} className="shrink-0 text-text-secondary" />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </Container>
