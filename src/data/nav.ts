@@ -1,9 +1,9 @@
 import type { NavLink } from "@/types";
 
 export const navLinks: NavLink[] = [
-  { label: "Сообщество", href: "#community" },
-  { label: "Обучение", href: "#platform" },
-  { label: "AI", href: "#ai" },
-  { label: "Возможности", href: "#products" },
+  { label: "Как работает", href: "#how-it-works" },
+  { label: "Маршрут", href: "#scenario" },
+  { label: "Инструменты", href: "#products" },
+  { label: "Практика", href: "#community" },
   { label: "О проекте", href: "#about" },
 ];

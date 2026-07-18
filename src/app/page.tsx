@@ -1,14 +1,12 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "@/components/hero/HeroSection";
+import { AppShowcaseCarousel } from "@/components/showcase/AppShowcaseCarousel";
 import { ScenarioPicker } from "@/components/scenario/ScenarioPicker";
-import { BenefitCards } from "@/components/benefits/BenefitCards";
-import { ProcessLine } from "@/components/process/ProcessLine";
-import { PlatformFeatures } from "@/components/platform/PlatformFeatures";
-import { AiAssistantSection } from "@/components/ai/AiAssistantSection";
-import { AlfaProductsSection } from "@/components/products/AlfaProductsSection";
-import { CommunityFeedPreview } from "@/components/community/CommunityFeedPreview";
-import { BankValueSection } from "@/components/bank-value/BankValueSection";
+import { AiNavigatorSection } from "@/components/ai/AiNavigatorSection";
+import { FinancialToolsSection } from "@/components/financial/FinancialToolsSection";
+import { CommunityPreviewSection } from "@/components/community/CommunityPreviewSection";
+import { PilotGoalsSection } from "@/components/pilot/PilotGoalsSection";
 import { FinalCta } from "@/components/cta/FinalCta";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -22,25 +20,19 @@ export default function Home() {
           <ScenarioPicker />
         </Reveal>
         <Reveal>
-          <BenefitCards />
+          <AppShowcaseCarousel />
         </Reveal>
         <Reveal>
-          <ProcessLine />
+          <AiNavigatorSection />
         </Reveal>
         <Reveal>
-          <PlatformFeatures />
+          <FinancialToolsSection />
         </Reveal>
         <Reveal>
-          <AiAssistantSection />
+          <CommunityPreviewSection />
         </Reveal>
         <Reveal>
-          <AlfaProductsSection />
-        </Reveal>
-        <Reveal>
-          <CommunityFeedPreview />
-        </Reveal>
-        <Reveal>
-          <BankValueSection />
+          <PilotGoalsSection />
         </Reveal>
         <Reveal>
           <FinalCta />

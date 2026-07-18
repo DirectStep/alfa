@@ -3,15 +3,13 @@
 :root {
   --background: #ffffff;
   --text-primary: #111111;
-  --text-secondary: #5d5d5d;
+  --text-secondary: #565656;
   --alfa-red: #ef3124;
   --alfa-red-bright: #ff2b2b;
-  --surface: #f5f5f6;
+  --surface: #f4f4f5;
   --border-color: #e5e5e7;
   --black: #151515;
-  --lavender: #e8c6ff;
-  --light-green: #ddf6c8;
-  --pink: #ffb7ed;
+  --muted: #f2f3f5;
 }
 
 @theme inline {
@@ -23,11 +21,10 @@
   --color-surface: var(--surface);
   --color-border: var(--border-color);
   --color-black: var(--black);
-  --color-lavender: var(--lavender);
-  --color-light-green: var(--light-green);
-  --color-pink: var(--pink);
+  --color-muted: var(--muted);
 
-  --font-sans: var(--font-styrene);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell,
+    "Noto Sans", sans-serif, "Helvetica Neue", Helvetica;
 
   --breakpoint-md: 768px;
   --breakpoint-laptop: 1280px;
@@ -36,7 +33,19 @@
 body {
   background: var(--background);
   color: var(--text-primary);
-  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell,
+    "Noto Sans", sans-serif, "Helvetica Neue", Helvetica;
+  font-synthesis: none;
+  line-height: 1.4;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: var(--alfa-red);
+  color: #ffffff;
 }
 
 @keyframes float-slow {
@@ -51,6 +60,19 @@ body {
 
 .animate-float-slow {
   animation: float-slow 6s ease-in-out infinite;
+}
+
+@keyframes progress-grow {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-progress {
+  animation: progress-grow 15s linear forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

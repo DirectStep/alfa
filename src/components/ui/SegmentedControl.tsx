@@ -22,7 +22,7 @@ export function SegmentedControl({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="flex flex-wrap gap-2 rounded-full bg-surface p-1.5"
+      className="flex flex-wrap gap-2 rounded-[20px] bg-surface p-1.5 laptop:rounded-full"
     >
       {options.map((option) => {
         const isActive = option.id === activeId;

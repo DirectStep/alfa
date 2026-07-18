@@ -1,35 +1,32 @@
 import { Container } from "@/components/ui/Container";
-import { navLinks } from "@/data/nav";
+import { AlfaLogo } from "@/components/ui/AlfaLogo";
+
+const footerLinks = [
+  { label: "Как работает", href: "#how-it-works" },
+  { label: "Маршрут", href: "#scenario" },
+  { label: "Инструменты", href: "#products" },
+  { label: "Практика", href: "#community" },
+];
 
 export function Footer() {
   return (
-    <footer id="about" className="border-t border-border py-10 laptop:py-14">
-      <Container className="flex flex-col gap-8 laptop:flex-row laptop:items-start laptop:justify-between">
-        <div className="max-w-sm">
-          <p className="text-lg font-bold">Альфа Дело</p>
-          <p className="mt-3 text-[14px] leading-relaxed text-text-secondary">
-            Сообщество, знания, AI-помощник и инструменты Альфа-Банка для
-            молодых предпринимателей 17-25 лет.
-          </p>
-        </div>
-
-        <nav className="flex flex-wrap gap-x-6 gap-y-3">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-[14px] text-text-secondary hover:text-text-primary transition-colors"
-            >
+    <footer id="about" className="mt-20 border-t border-border py-8 laptop:mt-24 laptop:py-10">
+      <Container className="flex flex-col gap-7 laptop:flex-row laptop:items-center laptop:justify-between">
+        <a href="#top" className="flex items-center gap-3">
+          <AlfaLogo className="text-alfa-red" height={26} />
+          <span className="text-[17px] font-bold tracking-tight">Альфа-Дело</span>
+        </a>
+        <nav className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Навигация в подвале">
+          {footerLinks.map((link) => (
+            <a key={link.label} href={link.href} className="text-[14px] text-text-secondary transition-colors hover:text-text-primary">
               {link.label}
             </a>
           ))}
         </nav>
-      </Container>
-
-      <Container className="mt-10">
-        <p className="text-[13px] text-text-secondary">
-          © {new Date().getFullYear()} Альфа Дело. Проект Альфа-Банка.
-        </p>
+        <div className="laptop:text-right">
+          <p className="text-[14px] font-semibold">Проект команды VOLT</p>
+          <p className="mt-1 text-[12px] text-text-secondary">Концепция цифрового сервиса для молодых предпринимателей.</p>
+        </div>
       </Container>
     </footer>
   );

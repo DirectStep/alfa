@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { styrene } from "@/fonts/styrene-a";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Альфа Дело — сообщество для тех, кто делает свое дело",
+  title: "Альфа-Дело — понятный путь от идеи до первой оплаты",
   description:
-    "Платформа для молодых предпринимателей 17-25 лет: сообщество, знания, AI-помощник и инструменты Альфа-Банка в одном месте.",
+    "Альфа-Дело помогает проверить идею, составить план запуска, найти практический опыт и подключить финансовые инструменты Альфа-Банка.",
 };
 
 export default function RootLayout({
@@ -14,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${styrene.variable} antialiased`}>
+    <html lang="ru" className="antialiased">
       <body className="bg-background text-text-primary">{children}</body>
     </html>
   );

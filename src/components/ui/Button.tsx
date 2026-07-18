@@ -1,34 +1,50 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
+import Link from "next/link";
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "dark";
-  size?: "sm" | "md";
+type Variant = "primary" | "secondary" | "dark" | "light";
+type Size = "sm" | "md";
+
+type BaseProps = {
+  variant?: Variant;
+  size?: Size;
+  className?: string;
 };
 
-const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
-  primary:
-    "bg-alfa-red text-white hover:bg-alfa-red-bright active:bg-alfa-red",
+type ButtonAsButton = BaseProps &
+  ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined };
+
+type ButtonAsLink = BaseProps &
+  AnchorHTMLAttributes<HTMLAnchorElement> & { href: string };
+
+const variantClasses: Record<Variant, string> = {
+  primary: "bg-alfa-red text-white hover:bg-alfa-red-bright active:bg-alfa-red",
   secondary:
     "bg-transparent text-text-primary border border-border hover:border-text-primary",
   dark: "bg-black text-white hover:bg-black/85",
+  light: "bg-white text-text-primary hover:bg-white/90",
 };
 
-const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "h-11 px-5 text-[14px]",
-  md: "h-14 px-7 text-[15px]",
+const sizeClasses: Record<Size, string> = {
+  sm: "h-10 px-5 text-[14px]",
+  md: "h-12 px-6 text-[14px]",
 };
 
-export function Button({
-  variant = "primary",
-  size = "md",
-  className = "",
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      type="button"
-      className={`inline-flex items-center justify-center rounded-full font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
-      {...props}
-    />
-  );
+export function Button(props: ButtonAsButton | ButtonAsLink) {
+  const { variant = "primary", size = "md", className = "" } = props;
+  const classes = `inline-flex items-center justify-center rounded-full font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red ${sizeClasses[size]} ${variantClasses[variant]} ${className}`;
+
+  if (props.href !== undefined) {
+    const { variant: _v, size: _s, className: _c, ...rest } = props;
+    void _v;
+    void _s;
+    void _c;
+    return <Link className={classes} {...rest} />;
+  }
+
+  const { variant: _v, size: _s, className: _c, href: _h, ...rest } = props;
+  void _v;
+  void _s;
+  void _c;
+  void _h;
+  return <button type="button" className={classes} {...rest} />;
 }
