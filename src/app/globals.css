@@ -6,6 +6,10 @@
   --text-secondary: #565656;
   --alfa-red: #ef3124;
   --alfa-red-bright: #ff2b2b;
+  --future-purple: #9933ff;
+  --future-green: #a8ff00;
+  --future-blue: #0078ff;
+  --future-cyan: #08d8d0;
   --surface: #f4f4f5;
   --border-color: #e5e5e7;
   --black: #151515;
@@ -18,13 +22,16 @@
   --color-text-secondary: var(--text-secondary);
   --color-alfa-red: var(--alfa-red);
   --color-alfa-red-bright: var(--alfa-red-bright);
+  --color-future-purple: var(--future-purple);
+  --color-future-green: var(--future-green);
+  --color-future-blue: var(--future-blue);
+  --color-future-cyan: var(--future-cyan);
   --color-surface: var(--surface);
   --color-border: var(--border-color);
   --color-black: var(--black);
   --color-muted: var(--muted);
 
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell,
-    "Noto Sans", sans-serif, "Helvetica Neue", Helvetica;
+  --font-sans: var(--font-styrene), system-ui, sans-serif;
 
   --breakpoint-md: 768px;
   --breakpoint-laptop: 1280px;
@@ -33,10 +40,10 @@
 body {
   background: var(--background);
   color: var(--text-primary);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell,
-    "Noto Sans", sans-serif, "Helvetica Neue", Helvetica;
+  font-family: var(--font-styrene), system-ui, sans-serif;
   font-synthesis: none;
   line-height: 1.4;
+  overflow-x: hidden;
 }
 
 html {
@@ -73,6 +80,16 @@ html {
 
 .animate-progress {
   animation: progress-grow 15s linear forwards;
+}
+
+@keyframes hero-ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-hero-ticker {
+  animation: hero-ticker 24s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

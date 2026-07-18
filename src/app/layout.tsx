@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { styrene } from "@/fonts/styrene-a";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className="antialiased">
+    <html lang="ru" className={`${styrene.variable} antialiased`}>
       <body className="bg-background text-text-primary">{children}</body>
     </html>
   );

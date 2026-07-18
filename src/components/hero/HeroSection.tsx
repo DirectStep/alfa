@@ -1,36 +1,50 @@
+import { ArrowDownRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
 import { HeroArtwork } from "./HeroArtwork";
+
+const tickerItems = [
+  "Идея → запуск",
+  "Знания → действие",
+  "Сообщество → связи",
+  "Первая оплата → рост",
+];
 
 export function HeroSection() {
   return (
-    <section id="top" className="pt-8">
+    <section id="top" className="bg-alfa-red text-white">
       <Container>
-        <div className="grid overflow-hidden rounded-[28px] bg-[#f2f3f5] laptop:min-h-[570px] laptop:grid-cols-[1.04fr_0.96fr] laptop:rounded-[32px]">
-          <div className="flex flex-col justify-center px-6 py-10 sm:px-9 laptop:px-12 laptop:py-14">
-            <p className="text-[12px] font-bold uppercase tracking-[0.06em] text-alfa-red">Альфа-Дело</p>
-            <h1 className="mt-4 max-w-[680px] text-[38px] font-bold leading-[1.06] tracking-[-0.025em] md:text-[44px] laptop:text-[48px] laptop:leading-[1.08]">
-              От идеи до первой оплаты — с понятным планом
-            </h1>
-            <p className="mt-5 max-w-[570px] text-[16px] leading-6 text-text-secondary">
-              Концепция сервиса связывает стадию проекта, персональный маршрут и финансовые действия в приложении Альфа-Банка.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button variant="primary" href="#scenario" className="sm:px-7">Собрать пример маршрута</Button>
-              <Button variant="secondary" href="#how-it-works">Посмотреть, как работает</Button>
+        <div className="relative grid min-h-[680px] overflow-hidden laptop:grid-cols-[0.92fr_1.08fr] laptop:items-stretch">
+          <div className="relative z-10 flex flex-col justify-center py-12 laptop:py-16">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-bold uppercase tracking-[0.08em]">
+              <span>Альфа-Дело</span>
+              <span className="text-white/60">Концепт команды VOLT</span>
             </div>
-            <div className="mt-10 grid max-w-[560px] grid-cols-1 gap-3 border-t border-black/10 pt-5 min-[420px]:grid-cols-3 min-[420px]:gap-4">
-              {[["01", "Определить задачу"], ["02", "Получить маршрут"], ["03", "Перейти к действию"]].map(([number, label]) => (
-                <div key={number}>
-                  <p className="text-[12px] font-bold text-alfa-red">{number}</p>
-                  <p className="mt-1 text-[12px] leading-4 text-text-secondary sm:text-[13px]">{label}</p>
-                </div>
-              ))}
+            <h1 className="mt-5 max-w-[760px] text-[54px] font-bold leading-[0.92] tracking-[-0.055em] text-balance sm:text-[66px] laptop:text-[88px]">
+              Твоё дело начинается здесь
+            </h1>
+            <p className="mt-7 max-w-[560px] text-[17px] leading-6 text-white/80 laptop:text-[19px] laptop:leading-7">
+              Выбери задачу, получи понятный маршрут и переходи от идеи к первым продажам вместе с Альфой.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a href="#scenario" className="inline-flex h-13 items-center justify-center rounded-[14px] bg-future-green px-6 text-[14px] font-bold text-black transition-transform hover:-translate-y-0.5">Собрать свой маршрут</a>
+              <a href="#how-it-works" className="inline-flex h-13 items-center justify-center gap-2 rounded-[14px] border border-white/50 px-6 text-[14px] font-bold text-white transition-colors hover:bg-white hover:text-black">Как это работает <ArrowDownRight size={18} /></a>
             </div>
           </div>
           <HeroArtwork />
         </div>
       </Container>
+
+      <div className="overflow-hidden border-t border-black/10 bg-future-green py-3 text-black">
+        <div className="animate-hero-ticker flex min-w-max text-[16px] font-bold uppercase tracking-[-0.02em] sm:text-[18px]">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={copy === 1}>
+              {tickerItems.map((item) => (
+                <span key={item} className="flex items-center gap-8"><span>{item}</span><span aria-hidden>✦</span></span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

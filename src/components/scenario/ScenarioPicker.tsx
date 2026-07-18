@@ -1,16 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { industries, stages } from "@/data/scenarios";
 
-const nextSteps = ["Проверить исходные данные", "Собрать план на ближайшие действия", "Подключить нужный инструмент Альфы"];
 const industryFocus: Record<string, string> = {
-  creative: "Фокус: портфолио, стоимость работы и поиск первых заказчиков.",
-  startups: "Фокус: проверка гипотезы, прототип и обратная связь от рынка.",
-  ecommerce: "Фокус: ассортимент, каналы продаж и приём онлайн-оплаты.",
+  creative: "Портфолио, цена и первые заказчики",
+  startups: "Гипотеза, прототип и обратная связь",
+  ecommerce: "Ассортимент, продажи и онлайн-оплата",
 };
 
 export function ScenarioPicker() {
@@ -20,45 +19,35 @@ export function ScenarioPicker() {
   const stage = useMemo(() => stages.find((item) => item.id === stageId)!, [stageId]);
 
   return (
-    <section id="scenario" className="pt-20 laptop:pt-24">
+    <section id="scenario" className="bg-future-purple py-20 text-white laptop:py-24">
       <Container>
-        <div className="grid overflow-hidden rounded-[28px] border border-border bg-white laptop:grid-cols-[0.92fr_1.08fr] laptop:rounded-[32px]">
-          <div className="p-6 sm:p-8 laptop:p-10">
-            <p className="text-[12px] font-bold uppercase tracking-[0.06em] text-alfa-red">Персональный маршрут</p>
-            <h2 className="mt-3 text-[30px] font-bold leading-[1.12] tracking-[-0.02em] laptop:text-[40px] laptop:leading-[1.2]">С чего начинается ваш проект?</h2>
-            <p className="mt-4 max-w-[520px] text-[15px] leading-6 text-text-secondary">Два ответа помогают убрать лишнее и собрать рекомендации под конкретную задачу.</p>
+        <div className="grid gap-8 laptop:grid-cols-[0.78fr_1.22fr] laptop:items-end">
+          <div>
+            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-future-green">Маршрут под тебя</p>
+            <h2 className="mt-4 max-w-[620px] text-[42px] font-bold leading-[0.96] tracking-[-0.045em] text-balance sm:text-[54px] laptop:text-[68px]">Где ты сейчас?</h2>
+          </div>
+          <p className="max-w-[580px] text-[17px] leading-6 text-white/75 laptop:justify-self-end">Два ответа — и вместо каталога функций ты увидишь ближайшую задачу, полезные материалы и действие, которое двигает проект дальше.</p>
+        </div>
 
-            <div className="mt-7 space-y-5">
-              <div>
-                <p className="mb-2 text-[13px] font-semibold">Направление</p>
-                <SegmentedControl aria-label="Направление бизнеса" options={industries} activeId={industryId} onSelect={setIndustryId} variant="dark" />
-              </div>
-              <div>
-                <p className="mb-2 text-[13px] font-semibold">Текущая стадия</p>
-                <SegmentedControl aria-label="Стадия бизнеса" options={stages} activeId={stageId} onSelect={setStageId} variant="outline-red" />
-              </div>
+        <div className="mt-10 grid overflow-hidden rounded-[28px] bg-[#5d17db] laptop:grid-cols-[0.92fr_1.08fr]">
+          <div className="p-6 sm:p-8 laptop:p-10">
+            <div>
+              <p className="mb-3 text-[13px] font-bold">Чем хочешь заниматься?</p>
+              <SegmentedControl aria-label="Направление бизнеса" options={industries} activeId={industryId} onSelect={setIndustryId} variant="future" />
             </div>
+            <div className="mt-7">
+              <p className="mb-3 text-[13px] font-bold">На каком ты этапе?</p>
+              <SegmentedControl aria-label="Стадия бизнеса" options={stages} activeId={stageId} onSelect={setStageId} variant="future" />
+            </div>
+            <p className="mt-8 text-[13px] text-white/55">Можно изменить ответы в любой момент</p>
           </div>
 
-          <div className="flex flex-col bg-[#171719] p-6 text-white sm:p-8 laptop:p-10">
-            <div className="flex items-center justify-between gap-4 border-b border-white/15 pb-5">
-              <div>
-                <p className="text-[12px] text-white/55">Маршрут для направления</p>
-                <p className="mt-1 text-[16px] font-semibold">{industry.label}</p>
-              </div>
-              <span className="rounded-full bg-white/10 px-3 py-1.5 text-[12px]">{stage.label}</span>
-            </div>
-            <h3 className="mt-7 text-[24px] font-bold leading-[1.15] laptop:text-[28px]">{stage.recommendation}</h3>
-            <p className="mt-3 text-[14px] leading-5 text-white/60">{industryFocus[industry.id]}</p>
-            <ol className="mt-7 space-y-3">
-              {nextSteps.map((step, index) => (
-                <li key={step} className="flex items-center gap-3 rounded-[16px] bg-white/[0.07] p-3.5">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-alfa-red text-[12px] font-bold">{index === 0 ? <Check size={14} /> : index + 1}</span>
-                  <span className="text-[14px] leading-5 text-white/85">{step}</span>
-                </li>
-              ))}
-            </ol>
-            <a href="#how-it-works" className="mt-7 inline-flex items-center gap-2 text-[14px] font-medium text-white hover:text-white/75">Продолжить по примеру маршрута <ArrowRight size={17} /></a>
+          <div className="relative flex min-h-[430px] flex-col overflow-hidden bg-future-green p-7 text-black sm:p-9 laptop:p-11">
+            <div aria-hidden className="absolute -bottom-12 -right-8 text-[170px] font-black leading-none tracking-[-0.08em] text-alfa-red/90 laptop:text-[230px]">GO</div>
+            <p className="relative z-10 text-[12px] font-bold uppercase tracking-[0.08em]">Твой первый маршрут</p>
+            <h3 className="relative z-10 mt-7 max-w-[560px] text-[32px] font-bold leading-[1.02] tracking-[-0.035em] sm:text-[40px]">{stage.recommendation}</h3>
+            <p className="relative z-10 mt-4 max-w-[450px] text-[16px] leading-6">{industryFocus[industry.id]}</p>
+            <a href="#how-it-works" className="relative z-10 mt-auto inline-flex w-fit items-center gap-2 rounded-[13px] bg-black px-5 py-3.5 text-[14px] font-bold text-white transition-transform hover:-translate-y-0.5">Показать маршрут <ArrowRight size={18} /></a>
           </div>
         </div>
       </Container>

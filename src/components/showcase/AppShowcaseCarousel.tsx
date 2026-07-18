@@ -4,7 +4,6 @@ import { useState, type KeyboardEvent } from "react";
 import { BookOpen, Sparkles, UserRound, Wallet, type LucideIcon } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PhoneMockup } from "@/components/ui/PhoneMockup";
-import { SectionHeading } from "@/components/ui/SectionHeading";
 
 type Screen = { id: string; label: string; icon: LucideIcon; title: string; text: string; action: string };
 
@@ -73,30 +72,37 @@ export function AppShowcaseCarousel() {
   }
 
   return (
-    <section id="how-it-works" className="pt-20 laptop:pt-24">
+    <section id="how-it-works" className="bg-future-blue py-20 text-white laptop:py-24">
       <Container>
-        <SectionHeading label="Прототип" title="Один интерфейс ведёт проект от идеи к действию" subtitle="Паспорт проекта хранит контекст. AI-маршрут предлагает следующий шаг. Знания и финансовые инструменты помогают его выполнить." />
+        <div className="grid gap-6 laptop:grid-cols-[1.05fr_0.95fr] laptop:items-end">
+          <div>
+            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-future-green">Прототип</p>
+            <h2 className="mt-4 max-w-[820px] text-[40px] font-bold leading-[0.98] tracking-[-0.045em] text-balance sm:text-[52px] laptop:text-[64px]">Весь путь проекта — в одном приложении</h2>
+          </div>
+          <p className="max-w-[570px] text-[16px] leading-6 text-white/75 laptop:justify-self-end">Паспорт хранит прогресс. AI предлагает следующий шаг. Знания и инструменты Альфы помогают выполнить его сразу.</p>
+        </div>
 
-        <div role="tablist" aria-label="Экраны приложения" className="mt-7 grid grid-cols-2 gap-1.5 rounded-[24px] bg-[#ededee] p-1.5 laptop:grid-cols-4">
+        <div role="tablist" aria-label="Экраны приложения" className="mt-8 grid grid-cols-2 gap-1.5 rounded-[20px] bg-black/20 p-1.5 laptop:grid-cols-4">
           {screens.map((screen, index) => {
             const selected = screen.id === activeId;
             return (
-              <button key={screen.id} id={`showcase-tab-${screen.id}`} type="button" role="tab" aria-selected={selected} aria-controls="showcase-panel" tabIndex={selected ? 0 : -1} onClick={() => setActiveId(screen.id)} onKeyDown={(event) => handleTabKeyDown(event, index)} className={`flex min-h-12 items-center justify-center gap-2 rounded-full px-3 text-[12px] font-medium transition-colors min-[420px]:text-[13px] laptop:text-[14px] ${selected ? "bg-[#202023] text-white" : "text-[#303034] hover:bg-white"}`}>
+              <button key={screen.id} id={`showcase-tab-${screen.id}`} type="button" role="tab" aria-selected={selected} aria-controls="showcase-panel" tabIndex={selected ? 0 : -1} onClick={() => setActiveId(screen.id)} onKeyDown={(event) => handleTabKeyDown(event, index)} className={`flex min-h-12 items-center justify-center gap-2 rounded-[15px] px-3 text-[12px] font-bold transition-colors min-[420px]:text-[13px] laptop:text-[14px] ${selected ? "bg-future-green text-black" : "text-white/75 hover:bg-white/10 hover:text-white"}`}>
                 <screen.icon size={16} aria-hidden />{screen.label}
               </button>
             );
           })}
         </div>
 
-        <div id="showcase-panel" role="tabpanel" aria-labelledby={`showcase-tab-${active.id}`} className="mt-6 grid overflow-hidden rounded-[28px] bg-[#171719] text-white laptop:min-h-[540px] laptop:grid-cols-[0.9fr_1.1fr] laptop:rounded-[32px]">
+        <div id="showcase-panel" role="tabpanel" aria-labelledby={`showcase-tab-${active.id}`} className="mt-6 grid overflow-hidden rounded-[28px] bg-[#134fc9] text-white laptop:min-h-[560px] laptop:grid-cols-[0.82fr_1.18fr]">
           <article className="flex flex-col justify-center p-7 sm:p-9 laptop:p-12">
-            <p className="text-[12px] font-bold uppercase tracking-[0.06em] text-alfa-red">{active.label}</p>
-            <h3 className="mt-4 max-w-[560px] text-[28px] font-bold leading-[1.12] tracking-[-0.02em] laptop:text-[36px]">{active.title}</h3>
+            <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-future-green">{active.label}</p>
+            <h3 className="mt-4 max-w-[560px] text-[30px] font-bold leading-[1.05] tracking-[-0.035em] laptop:text-[42px]">{active.title}</h3>
             <p className="mt-4 max-w-[540px] text-[15px] leading-6 text-white/65">{active.text}</p>
-            <div className="mt-8 inline-flex w-fit items-center rounded-full border border-white/20 px-4 py-2 text-[13px] text-white/75">Интерфейсный прототип</div>
+            <div className="mt-8 inline-flex w-fit items-center rounded-[12px] bg-future-purple px-4 py-2.5 text-[13px] font-bold text-white">Интерфейсный прототип</div>
           </article>
 
-          <div className="relative flex min-h-[480px] items-end justify-center overflow-hidden bg-[#ececef] px-5 pt-8 laptop:min-h-[540px] laptop:gap-8">
+          <div className="relative flex min-h-[500px] items-end justify-center overflow-hidden bg-future-green px-5 pt-8 laptop:min-h-[560px] laptop:gap-8">
+            <div aria-hidden className="absolute -right-8 top-0 text-[190px] font-black leading-none tracking-[-0.08em] text-future-purple/25">APP</div>
             <PhoneMockup headerClass="bg-alfa-red" className="relative z-10 h-[88%] max-h-[480px] -rotate-[4deg] translate-y-4"><ProjectScreen screen={active} /></PhoneMockup>
             <PhoneMockup headerClass="bg-[#171719]" className="relative z-20 hidden h-[94%] max-h-[510px] rotate-[4deg] translate-y-6 md:block"><NextStepScreen screen={active} /></PhoneMockup>
           </div>
