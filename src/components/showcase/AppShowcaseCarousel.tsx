@@ -72,7 +72,7 @@ export function AppShowcaseCarousel() {
               alt={`Интерфейс прототипа: ${active.label}`}
               width={active.imageWidth}
               height={active.imageHeight}
-              className={`relative z-10 max-h-[500px] w-full object-contain drop-shadow-[0_28px_45px_rgba(0,0,0,0.2)] ${active.id === "passport" ? "translate-y-9 rotate-[-2deg]" : active.id === "knowledge" ? "translate-y-9" : ""}`}
+              className={`relative z-10 max-h-[500px] w-full object-contain drop-shadow-[0_28px_45px_rgba(0,0,0,0.2)] ${active.id === "passport" || active.id === "knowledge" ? "translate-y-9" : ""}`}
             />
           </div>
         </div>

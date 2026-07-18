@@ -12,7 +12,7 @@ export function FinalCta() {
             <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-future-green">Альфа-Дело</p>
             <h2 className="mt-4 text-[44px] font-bold leading-[0.92] tracking-[-0.055em] sm:text-[62px] laptop:text-[82px]">Есть идея?<br />Пора в дело.</h2>
             <p className="mt-6 max-w-[540px] text-[17px] leading-7 text-white/75">Ответьте на несколько вопросов и получите первый рабочий маршрут — от задачи до конкретного действия.</p>
-            <a href="#scenario" className="mt-8 inline-flex w-fit items-center gap-3 rounded-full bg-future-green px-6 py-4 text-[15px] font-bold text-black transition-transform hover:-translate-y-1">
+            <a href="https://directstep.github.io/concept" className="mt-8 inline-flex w-fit items-center gap-3 rounded-full bg-future-green px-6 py-4 text-[15px] font-bold text-black transition-transform hover:-translate-y-1">
               Собрать маршрут <ArrowUpRight size={18} />
             </a>
           </div>

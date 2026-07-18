@@ -24,7 +24,7 @@ export function Header() {
           ))}
         </nav>
 
-        <a href="#scenario" className="hidden h-11 items-center rounded-[12px] bg-white px-5 text-[14px] font-bold text-black transition-transform hover:-translate-y-0.5 laptop:inline-flex">Собрать маршрут</a>
+        <a href="https://directstep.github.io/concept" className="hidden h-11 items-center rounded-[12px] bg-white px-5 text-[14px] font-bold text-black transition-transform hover:-translate-y-0.5 laptop:inline-flex">Собрать маршрут</a>
 
         <button type="button" aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white laptop:hidden">
           {menuOpen ? <X size={21} /> : <Menu size={21} />}
@@ -37,7 +37,7 @@ export function Header() {
             {navLinks.map((link) => (
               <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-3 text-[15px] font-semibold hover:bg-white/10">{link.label}</a>
             ))}
-            <a href="#scenario" onClick={() => setMenuOpen(false)} className="mt-2 flex h-12 items-center justify-center rounded-[12px] bg-white text-[14px] font-bold text-black">Собрать маршрут</a>
+            <a href="https://directstep.github.io/concept" onClick={() => setMenuOpen(false)} className="mt-2 flex h-12 items-center justify-center rounded-[12px] bg-white text-[14px] font-bold text-black">Собрать маршрут</a>
           </Container>
         </div>
       )}
