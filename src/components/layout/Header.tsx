@@ -15,7 +15,7 @@ export function Header() {
       <Container className="flex h-[76px] items-center justify-between laptop:h-[84px]">
         <a href="#top" className="flex items-center gap-3" aria-label="Альфа-Будущее и Альфа-Дело, в начало страницы">
           <Image src={assetPath("/assets/brand/alfa-future.svg")} alt="Альфа-Будущее" width={701} height={250} priority className="h-10 w-auto laptop:h-12" />
-          <span className="text-[15px] font-black tracking-[-0.04em] text-white laptop:text-[17px]">Альфа-Дело</span>
+          <span className="text-[15px] font-semibold tracking-[-0.03em] text-white laptop:text-[17px]">Альфа-Дело</span>
         </a>
 
         <nav className="hidden items-center gap-7 laptop:flex" aria-label="Основная навигация">

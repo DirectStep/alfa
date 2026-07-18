@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { assetPath } from "@/lib/assetPath";
 
 export function FinalCta() {
   return (
@@ -16,7 +17,7 @@ export function FinalCta() {
             </a>
           </div>
           <span className="pointer-events-none absolute -bottom-8 right-0 z-0 text-[170px] font-black leading-none tracking-[-0.08em] text-white/10 sm:text-[260px]">GO</span>
-          <Image src="/assets/cards/benefit-ai.png" alt="" width={900} height={900} className="pointer-events-none absolute -bottom-[22%] -right-[20%] z-10 w-[78%] max-w-[740px] object-contain drop-shadow-2xl" />
+          <Image src={assetPath("/assets/cards/benefit-ai.png")} alt="" width={900} height={900} className="pointer-events-none absolute -bottom-[22%] -right-[20%] z-10 w-[78%] max-w-[740px] object-contain drop-shadow-2xl" />
         </div>
       </Container>
     </section>

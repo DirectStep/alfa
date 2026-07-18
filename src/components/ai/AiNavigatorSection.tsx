@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { assetPath } from "@/lib/assetPath";
 
 const steps = [
   { number: "01", title: "Понимает контекст", text: "Учитывает стадию, цель и ограничения проекта.", tone: "bg-future-purple text-white" },
@@ -35,7 +36,7 @@ export function AiNavigatorSection() {
               </a>
             </div>
             <span className="pointer-events-none absolute -bottom-10 -left-2 text-[190px] font-black leading-none tracking-[-0.1em] text-white/8 sm:text-[260px]">AI</span>
-            <Image src="/assets/ai/ai-letter.png" alt="" width={760} height={760} className="pointer-events-none absolute -bottom-[18%] -right-[22%] w-[74%] max-w-[560px] object-contain drop-shadow-2xl" />
+            <Image src={assetPath("/assets/ai/ai-letter.png")} alt="" width={760} height={760} className="pointer-events-none absolute -bottom-[18%] -right-[22%] w-[74%] max-w-[560px] object-contain drop-shadow-2xl" />
           </article>
 
           <ol className="grid gap-4">

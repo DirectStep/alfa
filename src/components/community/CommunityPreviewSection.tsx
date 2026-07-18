@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { assetPath } from "@/lib/assetPath";
 
 const formats = [
   { title: "Разборы запусков", text: "Проверенные решения и ошибки предпринимателей", color: "bg-future-green" },
@@ -19,7 +20,7 @@ export function CommunityPreviewSection() {
 
         <div className="mt-10 grid gap-5 laptop:grid-cols-[0.78fr_1.22fr]">
           <div className="relative min-h-[420px] overflow-hidden rounded-[28px] bg-alfa-red laptop:min-h-[530px] laptop:rounded-[34px]">
-            <Image src="/assets/future/future-grant-video.png" alt="Участники сообщества Альфа-Будущего" fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" />
+            <Image src={assetPath("/assets/future/future-grant-video.png")} alt="Участники сообщества Альфа-Будущего" fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-7 pt-24 text-white">
               <p className="text-[12px] font-bold uppercase tracking-[0.07em] text-future-green">Живой опыт</p>
               <h3 className="mt-3 text-[30px] font-bold leading-none">Не теория.<br />Люди и их решения.</h3>

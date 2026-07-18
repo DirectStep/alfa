@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { assetPath } from "@/lib/assetPath";
 
 const tools = [
   { stage: "Первые продажи", title: "Принять первую оплату", text: "Ссылка, QR-код или СБП появляются именно тогда, когда проект готов продавать.", word: "PAY", tone: "bg-future-green text-black", image: "/assets/platform/profile.png" },
@@ -29,7 +30,7 @@ export function FinancialToolsSection() {
                 <p className="mt-4 max-w-[360px] text-[15px] leading-5 opacity-70">{tool.text}</p>
               </div>
               <span className="pointer-events-none absolute bottom-4 left-4 text-[112px] font-black leading-none tracking-[-0.08em] opacity-15 sm:text-[136px]">{tool.word}</span>
-              <Image src={tool.image} alt="" width={620} height={500} className="absolute -bottom-[5%] -right-[12%] h-[48%] w-[70%] object-contain transition-transform duration-500 group-hover:-translate-y-2 group-hover:rotate-2" />
+              <Image src={assetPath(tool.image)} alt="" width={620} height={500} className="absolute -bottom-[5%] -right-[12%] h-[48%] w-[70%] object-contain transition-transform duration-500 group-hover:-translate-y-2 group-hover:rotate-2" />
             </li>
           ))}
         </ul>
