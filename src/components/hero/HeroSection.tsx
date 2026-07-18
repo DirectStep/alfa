@@ -9,6 +9,8 @@ const tickerItems = [
   "Первая оплата → рост",
 ];
 
+const tickerSequence = [...tickerItems, ...tickerItems];
+
 export function HeroSection() {
   return (
     <section id="top" className="bg-alfa-red text-white">
@@ -38,8 +40,8 @@ export function HeroSection() {
         <div className="animate-hero-ticker flex min-w-max text-[16px] font-bold uppercase tracking-[-0.02em] sm:text-[18px]">
           {[0, 1].map((copy) => (
             <div key={copy} className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={copy === 1}>
-              {tickerItems.map((item) => (
-                <span key={item} className="flex items-center gap-8"><span>{item}</span><span aria-hidden>✦</span></span>
+              {tickerSequence.map((item, index) => (
+                <span key={`${item}-${index}`} className="flex items-center gap-8"><span>{item}</span><span aria-hidden>✦</span></span>
               ))}
             </div>
           ))}
