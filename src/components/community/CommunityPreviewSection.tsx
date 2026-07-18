@@ -19,8 +19,8 @@ export function CommunityPreviewSection() {
         <p className="mt-5 max-w-[720px] text-[17px] leading-7 text-text-secondary">Практика других участников встроена в маршрут: не отдельная лента контента, а помощь в момент, когда она действительно нужна.</p>
 
         <div className="mt-10 grid gap-5 laptop:grid-cols-[0.78fr_1.22fr]">
-          <div className="relative min-h-[420px] overflow-hidden rounded-[28px] bg-alfa-red laptop:min-h-[530px] laptop:rounded-[34px]">
-            <Image src={assetPath("/assets/future/future-grant-video.png")} alt="Участники сообщества Альфа-Будущего" fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" />
+          <div className="relative min-h-[420px] overflow-hidden rounded-[28px] bg-future-blue laptop:min-h-[530px] laptop:rounded-[34px]">
+            <Image src={assetPath("/assets/future/future-camp.png")} alt="Фирменная 3D-композиция Альфа-Будущего" fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover object-center" />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-7 pt-24 text-white">
               <p className="text-[12px] font-bold uppercase tracking-[0.07em] text-future-green">Живой опыт</p>
               <h3 className="mt-3 text-[30px] font-bold leading-none">Не теория.<br />Люди и их решения.</h3>
