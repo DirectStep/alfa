@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Download, RotateCcw, Send, Sparkles, WalletCards, X } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight, Braces, Check, FileCode2, FileSpreadsheet, FileText, LoaderCircle, RotateCcw, Send, Sparkles, WalletCards, X } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { buildAgentKit, downloadAgentKit, getAgentKitProfile, type AgentKitBuildStage } from "@/lib/agentKit";
 import { assetPath } from "@/lib/assetPath";
 
 type Step = "start" | "product" | "audience" | "prototype" | "budget" | "goal" | "analyzing" | "result" | "next" | "followup" | "payment";
@@ -302,7 +303,7 @@ export function AiAgentPrototype() {
         <div className="relative z-10">
           <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-alfa-red">Альфа Дело · AI-агент</p>
           <h1 className="mt-1 max-w-[930px] text-[30px] font-bold leading-none tracking-[-0.045em] sm:text-[36px] laptop:text-[38px]">AI-агент, который ведёт бизнес дальше</h1>
-          <p className="mt-1.5 max-w-[970px] text-[12px] leading-4 text-black/60 sm:text-[13px]">Собирает контекст, подключает нужные навыки и выбирает следующее действие.</p>
+          <p className="mt-1.5 max-w-[970px] text-[12px] leading-4 text-black/60 sm:text-[13px]">Собирает контекст, подключает нужные навыки и выбирает следующее действие. <a href="#how-ai-agent-works" className="ml-1 whitespace-nowrap font-bold text-future-blue underline decoration-future-blue/30 underline-offset-4 hover:decoration-future-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue">Как работает агент</a></p>
           <p className="mt-1 text-[11px] font-bold text-black/75">5 коротких вопросов — и агент готов к первой задаче.</p>
         </div>
 
@@ -316,20 +317,20 @@ export function AiAgentPrototype() {
         </div>
 
         <div className="relative z-10 mt-2 grid items-start gap-2.5 min-[1024px]:grid-cols-[minmax(0,1fr)_250px]">
-          <div className={`ai-agent-chat flex flex-col overflow-hidden rounded-[24px] bg-white text-black shadow-[0_12px_32px_rgba(17,17,17,0.06)] ${state.step === "start" ? "h-auto min-[1024px]:h-[max(420px,calc(100dvh-260px))] min-[1024px]:max-h-[680px]" : "h-[580px] min-[1024px]:h-[max(420px,calc(100dvh-260px))] min-[1024px]:max-h-[680px]"}`}>
+          <div className={`ai-agent-chat flex min-h-0 flex-col overflow-hidden rounded-[24px] bg-white text-black shadow-[0_12px_32px_rgba(17,17,17,0.06)] ${state.step === "start" ? "h-auto min-[1024px]:h-[max(420px,calc(100dvh-260px))] min-[1024px]:max-h-[680px]" : "h-[580px] min-[1024px]:h-[max(420px,calc(100dvh-260px))] min-[1024px]:max-h-[680px]"}`}>
             <div className="flex items-center justify-between border-b border-black/10 px-5 py-3 sm:px-6">
               <div className="flex items-center gap-3"><span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-future-blue ring-1 ring-black/5" aria-hidden="true"><Image src={assetPath("/assets/ai/alfa-agent.png")} alt="" width={1026} height={1402} className="absolute -top-2 left-1/2 h-[88px] w-16 max-w-none -translate-x-1/2 object-contain object-top" /></span><div><p className="text-[14px] font-bold">AI-агент «Альфа Дело»</p><p className="text-[11px] text-black/45">Собирает агента под ваш бизнес</p></div></div>
               <button type="button" onClick={() => setResetOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-[12px] font-bold text-black/55 hover:bg-black/5 hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue" aria-label="Начать диалог заново"><RotateCcw size={16} /><span className="hidden sm:inline">Заново</span></button>
             </div>
 
-            <div ref={chatScrollRef} className="flex flex-1 flex-col gap-5 overflow-y-auto overscroll-contain bg-[#fbfbfa] px-4 py-5 [&>*]:shrink-0 sm:px-6" aria-live="polite">
+            <div ref={chatScrollRef} className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain bg-[#fbfbfa] px-4 py-5 [&>*]:shrink-0 sm:px-6" aria-live="polite">
               {state.messages.map((message, index) => { const isCurrentQuestion = Boolean(questionNumber) && index === state.messages.length - 1 && message.role === "agent"; return <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}><div className={`max-w-[90%] rounded-[18px] px-4 py-3 text-[15px] leading-6 sm:max-w-[78%] sm:text-[16px] ${message.role === "user" ? "rounded-br-md bg-black text-white" : "rounded-bl-md bg-[#efefed] text-black"}`}>{isCurrentQuestion && <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.08em] text-future-purple">Настройка агента · вопрос {questionNumber} из 5</p>}<p className="whitespace-pre-line">{message.text}</p></div></div>; })}
 
               {state.step === "start" && <article className="relative grid min-h-full overflow-hidden rounded-[22px] bg-future-blue p-5 text-white sm:p-6 md:grid-cols-[minmax(0,1fr)_260px] md:items-center md:gap-6"><div className="relative z-10"><p className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/65">Настройка агента</p><h2 className="mt-2 max-w-[620px] text-[28px] font-bold leading-[0.98] tracking-[-0.04em] sm:text-[34px]">С чего начинаем?</h2><p className="mt-3 max-w-[570px] text-[13px] leading-5 text-white/75">Выберите близкую ситуацию. Все варианты покажут, как агент изучает проект и выбирает первое действие.</p><div className="mt-5 grid max-w-[650px] gap-2 sm:grid-cols-2">{quickReplies.start?.map((reply, index) => <button key={reply} type="button" onClick={() => submitAnswer(reply)} className={`min-h-12 rounded-[14px] px-4 text-left text-[12px] font-bold transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${index === 0 ? "bg-alfa-red text-white sm:col-span-2" : "bg-white/12 text-white ring-1 ring-white/25"}`}>{reply}</button>)}</div><button type="button" onClick={() => { setShowStartInput(true); window.requestAnimationFrame(() => inputRef.current?.focus()); }} className="mt-3 min-h-11 text-[12px] font-bold text-white underline decoration-white/35 underline-offset-4 hover:decoration-white">Описать свой проект</button><p className="mt-3 text-[10px] font-bold text-white/55">Демонстрация занимает около 2 минут.</p></div><div className="pointer-events-none relative hidden h-full min-h-[300px] md:block" aria-hidden="true"><div className="absolute inset-0 rounded-[28px] bg-white/[0.08]" /><Image src={assetPath("/assets/ai/alfa-agent.png")} alt="" width={1026} height={1402} priority className="absolute -bottom-10 left-1/2 h-[410px] w-[300px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_24px_28px_rgba(45,0,70,0.24)]" /></div></article>}
 
               {state.step === "analyzing" && <div className="max-w-[520px] rounded-[20px] bg-future-blue p-4 text-white"><div className="flex items-center gap-3 text-[15px] font-bold"><span className="h-2.5 w-2.5 animate-pulse rounded-full bg-future-green" />Настраиваю агента под ваш бизнес…</div><ul className="mt-3 grid gap-1.5 text-[12px] text-white/75"><li>Изучаю проект</li><li>Подключаю подходящие навыки</li><li>Выбираю первое действие</li></ul></div>}
 
-              {state.step === "result" && <ConfiguredAgentCard answers={state.answers} skills={activeSkills} saved={state.saved} onDownload={() => setConfigOpen(true)} onContinue={moveToNextStep} onSave={savePassport} />}
+              {state.step === "result" && <ConfiguredAgentCard answers={state.answers} skills={activeSkills} saved={state.saved} onGetKit={() => setConfigOpen(true)} onContinue={moveToNextStep} onSave={savePassport} />}
 
               {state.step !== "start" && replies.length > 0 && <div className="mt-auto pt-2"><p className="mb-3 text-[11px] font-bold text-black/45">Выберите вариант или напишите свой ответ</p><div className="flex flex-wrap gap-2">{replies.map((reply) => <button key={reply} type="button" onClick={() => submitAnswer(reply)} className="min-h-11 rounded-full border border-black/15 bg-white px-4 py-2 text-left text-[12px] font-bold transition-colors hover:border-future-blue hover:text-future-blue">{reply}</button>)}</div></div>}
 
@@ -340,7 +341,7 @@ export function AiAgentPrototype() {
               {state.step === "payment" && <div className="overflow-hidden rounded-[20px] border border-alfa-red/20 bg-white p-4 text-black sm:p-5"><div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-alfa-red text-white"><WalletCards size={21} /></span><div className="min-w-0 flex-1"><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-alfa-red">Финансовая задача · приём первой оплаты</p><div className="mt-2 inline-flex rounded-full bg-future-purple/10 px-3 py-1.5 text-[11px] font-bold text-future-purple">+ Приём первой оплаты</div><h3 className="mt-2 text-[20px] font-bold">Платёжная ссылка Альфа-Бизнес</h3><p className="mt-1.5 text-[11px] leading-4 text-black/55">Проверка спроса → первые предзаказы → необходимо принять оплату.</p><button type="button" onClick={() => setPaymentOpen(true)} className="mt-3 min-h-11 rounded-full bg-alfa-red px-5 text-[12px] font-bold text-white">Создать платёжную ссылку</button><p className="mt-2 text-[9px] leading-3 text-black/35">Операция откроется в защищённом контуре Альфа-Бизнес после подтверждения.</p></div></div></div>}
             </div>
 
-            {canAnswer && (state.step !== "start" || showStartInput) && <form onSubmit={handleSubmit} className="border-t border-black/10 bg-white p-3"><div className={`flex items-end gap-2 rounded-[16px] border bg-white p-1.5 ${error ? "border-alfa-red" : "border-black/15 focus-within:border-black"}`}><textarea ref={inputRef} value={input} onChange={(event) => { setInput(event.target.value); setError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submitAnswer(input); } }} rows={1} placeholder={state.step === "start" ? "Опишите ситуацию с запуском бренда одежды…" : "Напишите ответ…"} aria-label="Ответ AI-агенту" aria-invalid={Boolean(error)} className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-[14px] outline-none placeholder:text-black/35" /><button type="submit" className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-alfa-red text-white transition-transform hover:-translate-y-0.5" aria-label="Отправить ответ"><Send size={18} /></button></div><div className="mt-1.5 flex items-start justify-between gap-3 px-1"><p className="text-[11px] font-medium text-alfa-red" role="alert">{error}</p><p className={`ml-auto shrink-0 text-[10px] ${input.length > MAX_INPUT_LENGTH ? "text-alfa-red" : "text-black/35"}`}>{input.length}/{MAX_INPUT_LENGTH}</p></div></form>}
+            {canAnswer && (state.step !== "start" || showStartInput) && <form onSubmit={handleSubmit} className="shrink-0 border-t border-black/10 bg-white p-3"><div className={`flex items-end gap-2 rounded-[16px] border bg-white p-1.5 ${error ? "border-alfa-red" : "border-black/15 focus-within:border-black"}`}><textarea ref={inputRef} value={input} onChange={(event) => { setInput(event.target.value); setError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submitAnswer(input); } }} rows={1} placeholder={state.step === "start" ? "Опишите ситуацию с запуском бренда одежды…" : "Напишите ответ…"} aria-label="Ответ AI-агенту" aria-invalid={Boolean(error)} className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-[14px] outline-none placeholder:text-black/35" /><button type="submit" className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-alfa-red text-white transition-transform hover:-translate-y-0.5" aria-label="Отправить ответ"><Send size={18} /></button></div><div className="mt-1.5 flex items-start justify-between gap-3 px-1"><p className="text-[11px] font-medium text-alfa-red" role="alert">{error}</p><p className={`ml-auto shrink-0 text-[10px] ${input.length > MAX_INPUT_LENGTH ? "text-alfa-red" : "text-black/35"}`}>{input.length}/{MAX_INPUT_LENGTH}</p></div></form>}
           </div>
 
           <aside className="rounded-[20px] bg-white p-4 text-black shadow-[0_8px_24px_rgba(17,17,17,0.04)] min-[1024px]:sticky min-[1024px]:top-2">
@@ -354,45 +355,48 @@ export function AiAgentPrototype() {
       {passportOpen && <PassportModal state={state} onClose={() => setPassportOpen(false)} />}
       {resetOpen && <ResetModal onReset={resetConversation} onClose={() => setResetOpen(false)} />}
       {paymentOpen && <PaymentModal onClose={() => setPaymentOpen(false)} />}
-      {configOpen && <AgentConfigModal onContinue={() => { setConfigOpen(false); moveToNextStep(); }} onClose={() => setConfigOpen(false)} />}
+      {configOpen && <AgentKitModal answers={state.answers} onContinue={() => { setConfigOpen(false); moveToNextStep(); }} onClose={() => setConfigOpen(false)} />}
     </section>
   );
 }
 
-function ConfiguredAgentCard({ answers, skills, saved, onDownload, onSave, onContinue }: { answers: Answers; skills: string[]; saved: boolean; onDownload: () => void; onSave: () => void; onContinue: () => void }) {
+function ConfiguredAgentCard({ answers, skills, saved, onGetKit, onSave, onContinue }: { answers: Answers; skills: string[]; saved: boolean; onGetKit: () => void; onSave: () => void; onContinue: () => void }) {
   const [planOpen, setPlanOpen] = useState(false);
-  const goal = answers.goal === "Собрать первые заявки"
-    ? "Получить первые подтверждённые заявки"
-    : answers.goal === "Понять, что запускать первым"
-      ? "Выбрать первый продукт для запуска"
-      : "Получить подтверждение спроса";
-
+  const profile = getAgentKitProfile(answers);
   const displaySkills = skills.map((skill) => {
     if (skill === "Интервью с клиентами") return "Интервью с ЦА";
-    if (skill === "Тестовое предложение") return "Тест оффера";
+    if (skill === "Тестовое предложение") return "Тестирование предложения";
     return skill;
   });
+  const contextFields = [
+    ["Проект", profile.projectName],
+    ["Продукт", profile.product],
+    ["Аудитория", profile.audience],
+    ["Стадия", profile.stage],
+    ["Текущая цель", profile.goal],
+  ];
 
   return <article data-agent-result className="rounded-[24px] border border-black/10 bg-white p-4 text-black sm:p-5">
     <div className="grid gap-4 md:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
       <div className="flex min-w-0 flex-col">
-        <div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-alfa-red text-white"><Sparkles size={18} /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.09em] text-alfa-red">Персонализация завершена</p><h3 className="mt-1 text-[25px] font-bold leading-[0.98] tracking-[-0.04em] sm:text-[28px]">Ваш персональный AI-агент готов</h3></div></div>
-        <p className="mt-3 text-[12px] leading-[18px] text-black/60">Он собран по вашим ответам и уже понимает продукт, стадию и цель бизнеса.</p>
+        <div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-alfa-red text-white"><Sparkles size={18} /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.09em] text-alfa-red">НАСТРОЙКА ЗАВЕРШЕНА</p><h3 className="mt-1 text-[25px] font-bold leading-[0.98] tracking-[-0.04em] sm:text-[28px]">Ваш персональный AI-агент готов</h3></div></div>
+        <p className="mt-3 text-[12px] leading-[18px] text-black/60">Агент настроен под ваш проект, стадию и текущую цель. Он получил необходимые навыки и подготовил первое рабочее действие.</p>
+        <dl className="mt-3 grid gap-px overflow-hidden rounded-[14px] bg-black/10 sm:grid-cols-2">
+          {contextFields.map(([label, value], index) => <div key={label} className={`min-w-0 bg-muted px-3 py-2.5 ${index === contextFields.length - 1 ? "sm:col-span-2" : ""}`}><dt className="text-[9px] font-bold uppercase tracking-[0.07em] text-black/40">{label}</dt><dd className="mt-1 break-words text-[11px] font-bold leading-4">{value}</dd></div>)}
+        </dl>
         <div className="mt-3 rounded-[16px] border border-future-blue/15 bg-future-blue/[0.06] p-3">
-          <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-future-blue">Персональная настройка</p><p className="mt-1 text-[14px] font-bold leading-4">{displaySkills.length} навыка под ваш бизнес</p></div><span className="grid h-8 min-w-8 place-items-center rounded-full bg-future-blue px-2 text-[12px] font-bold text-white">{displaySkills.length}</span></div>
-          <p className="mt-1.5 text-[11px] leading-4 text-black/50">Выбраны по вашим ответам, текущей стадии и цели.</p>
+          <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-future-blue">Подключенные навыки</p><p className="mt-1 text-[13px] font-bold leading-4">Под задачу и текущую стадию</p></div><span className="grid h-8 min-w-8 place-items-center rounded-full bg-future-blue px-2 text-[12px] font-bold text-white">{displaySkills.length}</span></div>
           <div className="mt-2 flex flex-wrap gap-1">{displaySkills.map((skill) => <span key={skill} className="inline-flex items-center gap-1 rounded-full border border-future-blue/15 bg-white px-2.5 py-1.5 text-[10px] font-bold text-black/75"><Check size={11} strokeWidth={3} className="text-future-blue" />{skill}</span>)}</div>
         </div>
-        <div className="mt-3 border-y border-black/10 py-2 text-[11px] leading-4"><p><span className="font-bold uppercase tracking-[0.06em] text-black/35">Контекст</span><span className="ml-2 font-bold">Бренд одежды{answers.product ? ` · ${answers.product}` : ""} · Проверка идеи</span></p><p className="mt-1 text-black/55"><span className="font-bold text-black/35">Цель:</span> {goal}</p></div>
-        <button type="button" onClick={onSave} className="mt-auto min-h-11 self-start pt-2 text-left text-[11px] font-bold text-black/45 underline decoration-black/20 underline-offset-4 hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue">{saved ? "Открыть паспорт бизнеса" : "Сохранить результат в паспорт бизнеса"}</button>
+        <button type="button" onClick={onSave} className="mt-auto min-h-11 self-start pt-2 text-left text-[11px] font-bold text-black/45 underline decoration-black/20 underline-offset-4 hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue">{saved ? "Открыть паспорт бизнеса" : "Сохранить в паспорт бизнеса"}</button>
       </div>
 
       <div className="relative overflow-hidden rounded-[20px] bg-future-blue p-4 text-white sm:p-5">
         <Image src={assetPath("/assets/ai/alfa-agent.png")} alt="" width={1026} height={1402} className="pointer-events-none absolute -right-1 -top-4 h-40 w-[118px] object-contain opacity-100 drop-shadow-[0_18px_22px_rgba(48,0,72,0.28)]" aria-hidden="true" />
         <div className="relative z-10 pr-24 sm:pr-28"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-future-green" /><p className="text-[10px] font-bold uppercase tracking-[0.09em] text-white/70">Первое действие агента</p></div><h4 className="mt-2 text-[21px] font-bold leading-[1.02] tracking-[-0.025em] sm:text-[23px]">Проверить спрос до производства</h4></div>
-        <p className="relative z-10 mt-2 max-w-[390px] text-[12px] leading-[18px] text-white/75">Агент подготовил короткий план и вопросы для первых интервью.</p>
+        <p className="relative z-10 mt-2 max-w-[390px] text-[12px] leading-[18px] text-white/75">Показать 2-3 варианта продукта и собрать подтверждения интереса до первой закупки.</p>
         <div id="first-agent-plan" hidden={!planOpen} className="relative z-10 mt-3 rounded-[14px] bg-white p-3 text-black"><dl className="grid gap-2 text-[11px] sm:grid-cols-3"><div><dt className="text-black/45">Срок</dt><dd className="mt-1 font-bold">3 дня</dd></div><div><dt className="text-black/45">Готово, когда</dt><dd className="mt-1 font-bold">10 ответов и 3 интереса</dd></div><div><dt className="text-black/45">Инструмент</dt><dd className="mt-1 font-bold">Вопросы для интервью</dd></div></dl><ol className="mt-2 space-y-1 border-t border-black/10 pt-2 text-[11px] leading-4 text-black/65"><li>1. Подготовить три варианта продукта.</li><li>2. Провести пять интервью.</li><li>3. Собрать заявки или контакты.</li><li>4. Зафиксировать цену и ответы.</li></ol></div>
-        <div className="relative z-10 mt-4"><button type="button" onClick={onDownload} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-alfa-red px-4 text-[12px] font-bold text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><Download size={16} />Скачать конфигурацию агента</button><div className="mt-2 grid grid-cols-2 gap-2"><button type="button" onClick={() => setPlanOpen((current) => !current)} aria-expanded={planOpen} aria-controls="first-agent-plan" className="min-h-12 rounded-[14px] bg-white px-3 text-[12px] font-bold text-black/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">{planOpen ? "Скрыть план" : "Посмотреть план"}</button><button type="button" onClick={onContinue} className="inline-flex min-h-12 items-center justify-center gap-1 rounded-[14px] bg-white/12 px-3 text-[12px] font-bold text-white ring-1 ring-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Продолжить <ArrowRight size={14} /></button></div></div>
+        <div className="relative z-10 mt-3"><button type="button" onClick={() => setPlanOpen((current) => !current)} aria-expanded={planOpen} aria-controls="first-agent-plan" className="min-h-11 text-left text-[11px] font-bold text-white/70 underline decoration-white/30 underline-offset-4 hover:text-white">{planOpen ? "Скрыть план" : "Посмотреть план"}</button><button type="button" onClick={onGetKit} className="mt-1 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-alfa-red px-4 text-[12px] font-bold text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><Archive size={16} />Получить комплект AI-агента</button><button type="button" onClick={onContinue} className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-1 rounded-[14px] bg-white/12 px-3 text-[12px] font-bold text-white ring-1 ring-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Продолжить работу с агентом <ArrowRight size={14} /></button></div>
       </div>
     </div>
   </article>;
@@ -443,9 +447,69 @@ function useDialogFocus(onClose: () => void) {
   return dialogRef;
 }
 
-function AgentConfigModal({ onContinue, onClose }: { onContinue: () => void; onClose: () => void }) {
+const agentKitFiles = [
+  { title: "Открыть агента", text: "Персональная офлайн-страница с контекстом, навыками и первым планом.", icon: FileCode2 },
+  { title: "Таблица интервью", text: "Готовый CSV-шаблон для фиксации ответов потенциальных покупателей.", icon: FileSpreadsheet },
+  { title: "Конфигурация агента", text: "Структурированные настройки проекта, цели, навыков и ограничений.", icon: Braces },
+  { title: "Инструкция", text: "Короткое объяснение содержимого комплекта и продолжения работы.", icon: FileText },
+];
+
+const agentKitBuildStages = [
+  "Сохраняем контекст бизнеса",
+  "Добавляем подключенные навыки",
+  "Готовим рабочие инструменты",
+  "Формируем ZIP-комплект",
+];
+
+function AgentKitModal({ answers, onContinue, onClose }: { answers: Answers; onContinue: () => void; onClose: () => void }) {
   const dialogRef = useDialogFocus(onClose);
-  return <div className="fixed inset-0 z-[105] grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="config-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div ref={dialogRef} className="max-h-[90dvh] w-full max-w-[580px] overflow-y-auto rounded-[28px] bg-white p-6 text-black sm:p-8"><div className="flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-alfa-red text-white"><Download size={19} /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-alfa-red">Конфигурация создана</p><h2 id="config-title" className="mt-1 text-[27px] font-bold leading-none tracking-[-0.03em]">Конфигурация агента готова</h2></div></div><button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted" aria-label="Закрыть окно конфигурации"><X size={19} /></button></div><p className="mt-5 text-[14px] leading-6 text-black/65">Это демонстрационный прототип, созданный для финального кейса чемпионата «Альфа-Будущее». В текущей версии агент работает внутри страницы и не устанавливается как отдельный продукт.</p><p className="mt-3 text-[13px] leading-5 text-black/55">В полноценной версии пользователь сможет сохранить конфигурацию агента, подключённые навыки и контекст бизнеса в своём аккаунте «Альфа Дело».</p><p className="mt-4 rounded-[14px] bg-future-green px-4 py-3 text-[11px] font-bold text-black/65">Скачивание будет доступно в полной версии продукта.</p><div className="mt-5 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onContinue} className="min-h-12 flex-1 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white">Продолжить работу с агентом</button><button type="button" onClick={onClose} className="min-h-12 rounded-[14px] border border-black/15 px-5 text-[12px] font-bold">Закрыть</button></div></div></div>;
+  const profile = getAgentKitProfile(answers);
+  const [status, setStatus] = useState<"preview" | "building" | "done" | "error">("preview");
+  const [buildStage, setBuildStage] = useState<0 | AgentKitBuildStage>(0);
+  const [buildError, setBuildError] = useState("");
+  const isBuilding = status === "building";
+
+  async function handleBuild() {
+    setStatus("building");
+    setBuildStage(0);
+    setBuildError("");
+    try {
+      const kit = await buildAgentKit(answers, setBuildStage);
+      downloadAgentKit(kit);
+      setStatus("done");
+    } catch {
+      setStatus("error");
+      setBuildError("Не удалось собрать ZIP-комплект. Попробуйте ещё раз — прогресс агента сохранён.");
+    }
+  }
+
+  return <div className="fixed inset-0 z-[105] grid place-items-center bg-black/70 p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="config-title" onMouseDown={(event) => { if (!isBuilding && event.target === event.currentTarget) onClose(); }}><div ref={dialogRef} className="max-h-[92dvh] w-full max-w-[920px] overflow-y-auto rounded-[26px] bg-white p-5 text-black sm:rounded-[30px] sm:p-7">
+    <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-alfa-red">Переносимый комплект агента</p><h2 id="config-title" className="mt-2 text-[27px] font-bold leading-[0.98] tracking-[-0.035em] sm:text-[34px]">Ваш комплект готов к сборке</h2><p className="mt-3 max-w-[700px] text-[13px] leading-5 text-black/60 sm:text-[14px]">Мы сохраним настройки агента, контекст проекта и готовые инструменты для первого действия.</p></div><button type="button" onClick={onClose} disabled={isBuilding} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted disabled:cursor-not-allowed disabled:opacity-40" aria-label="Закрыть окно комплекта"><X size={19} /></button></div>
+
+    <div className="mt-5 grid gap-4 md:grid-cols-[0.72fr_1.28fr]">
+      <div className="overflow-hidden rounded-[22px] bg-future-blue p-4 text-white">
+        <div className="relative mx-auto h-[190px] w-[150px]" aria-hidden="true"><Image src={assetPath("/assets/ai/alfa-agent.png")} alt="" fill sizes="150px" className="object-contain object-top drop-shadow-[0_16px_20px_rgba(50,0,80,0.25)]" /></div>
+        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-future-green">Персональный AI-агент</p>
+        <h3 className="mt-2 text-[22px] font-bold leading-none">Агент проверки спроса</h3>
+        <p className="mt-3 text-[12px] leading-4 text-white/70">Настроен для проекта: <strong className="text-white">{profile.projectName}</strong></p>
+        <p className="mt-3 border-t border-white/20 pt-3 text-[10px] leading-4 text-white/55">Комплект содержит настройки и инструменты. Автономная LLM внутрь архива не входит.</p>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        {agentKitFiles.map((file) => { const Icon = file.icon; return <article key={file.title} className="rounded-[18px] border border-black/10 bg-muted p-4"><span className="grid h-9 w-9 place-items-center rounded-[11px] bg-white text-future-blue"><Icon size={18} /></span><h3 className="mt-3 text-[15px] font-bold leading-4">{file.title}</h3><p className="mt-2 text-[11px] leading-4 text-black/50">{file.text}</p></article>; })}
+      </div>
+    </div>
+
+    {(status === "building" || status === "done") && <div className="mt-4 rounded-[18px] border border-black/10 p-4" aria-live="polite"><p className="text-[11px] font-bold uppercase tracking-[0.07em] text-black/40">{status === "done" ? "Сборка завершена" : "Собираем комплект"}</p><ol className="mt-3 grid gap-2 sm:grid-cols-2">{agentKitBuildStages.map((label, index) => { const stage = (index + 1) as AgentKitBuildStage; const complete = status === "done" || buildStage >= stage; const current = status === "building" && buildStage === stage; return <li key={label} className={`flex min-h-11 items-center gap-2 rounded-[12px] px-3 py-2 text-[11px] font-bold ${complete ? "bg-future-green text-black" : "bg-muted text-black/40"}`}><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/80">{complete ? <Check size={12} strokeWidth={3} /> : index + 1}</span><span>{label}</span>{current && <LoaderCircle size={14} className="ml-auto animate-spin" />}</li>; })}</ol></div>}
+
+    {status === "done" && <div className="mt-4 rounded-[18px] bg-future-green p-4" role="status"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-black text-white"><Check size={18} strokeWidth={3} /></span><div><p className="text-[16px] font-bold">Комплект AI-агента скачан</p><p className="mt-1 text-[11px] leading-4 text-black/60">Откройте файл «Открыть_агента.html», чтобы посмотреть настройки и первое действие.</p></div></div></div>}
+    {status === "error" && <p className="mt-4 rounded-[16px] bg-alfa-red/10 p-4 text-[12px] font-bold leading-5 text-alfa-red" role="alert">{buildError}</p>}
+
+    <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+      <button type="button" onClick={status === "done" ? onContinue : handleBuild} disabled={isBuilding} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white disabled:cursor-wait disabled:opacity-70">{isBuilding ? <><LoaderCircle size={17} className="animate-spin" />Собираем ZIP</> : status === "done" ? <>Продолжить работу с агентом <ArrowRight size={15} /></> : <><Archive size={17} />{status === "error" ? "Повторить сборку" : "Собрать и скачать ZIP"}</>}</button>
+      <button type="button" onClick={status === "done" ? handleBuild : onClose} disabled={isBuilding} className="min-h-12 rounded-[14px] border border-black/15 px-5 text-[12px] font-bold disabled:cursor-wait disabled:opacity-40">{status === "done" ? "Скачать ещё раз" : "Отмена"}</button>
+    </div>
+  </div></div>;
 }
 
 function PassportModal({ state, onClose }: { state: AgentState; onClose: () => void }) {

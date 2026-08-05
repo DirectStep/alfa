@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { NumberedFeatureCard } from "@/components/ui/NumberedFeatureCard";
 import { assetPath } from "@/lib/assetPath";
 
 const steps = [
@@ -41,13 +42,7 @@ export function AiNavigatorSection() {
 
           <ol className="grid gap-4">
             {steps.map((step) => (
-              <li key={step.number} className={`${step.tone} grid min-h-[145px] grid-cols-[auto_1fr] gap-5 rounded-[26px] p-6 sm:p-7`}>
-                <span className="text-[13px] font-bold opacity-60">{step.number}</span>
-                <div>
-                  <h3 className="text-[24px] font-bold leading-none tracking-[-0.025em]">{step.title}</h3>
-                  <p className="mt-3 max-w-[360px] text-[15px] leading-5 opacity-70">{step.text}</p>
-                </div>
-              </li>
+              <NumberedFeatureCard key={step.number} {...step} className="min-h-[145px]" />
             ))}
           </ol>
         </div>

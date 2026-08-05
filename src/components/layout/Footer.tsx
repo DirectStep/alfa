@@ -9,7 +9,7 @@ const footerLinks = [
   { label: "Практика", href: "#community" },
 ];
 
-export function Footer() {
+export function Footer({ homeHref = "#top", sectionHrefPrefix = "" }: { homeHref?: string; sectionHrefPrefix?: string } = {}) {
   return (
     <footer id="about" className="bg-black py-10 text-white laptop:py-14">
       <Container>
@@ -17,12 +17,12 @@ export function Footer() {
           Концепт команды VOLT
         </p>
         <div className="mt-12 flex flex-col gap-9 border-t border-white/20 pt-8 laptop:mt-16 laptop:flex-row laptop:items-center laptop:justify-between">
-          <a href="#top" className="flex items-center gap-3">
+          <a href={homeHref} className="flex items-center gap-3">
             <Image src={assetPath("/assets/brand/alfa-future.svg")} alt="Альфа-Будущее" width={701} height={250} className="h-11 w-auto" />
             <span className="text-[18px] font-black tracking-[-0.04em]">Альфа-Дело</span>
           </a>
           <nav className="flex flex-wrap gap-x-6 gap-y-3" aria-label="Навигация в подвале">
-            {footerLinks.map((link) => <a key={link.label} href={link.href} className="text-[14px] text-white/60 transition-colors hover:text-future-green">{link.label}</a>)}
+            {footerLinks.map((link) => <a key={link.label} href={`${sectionHrefPrefix}${link.href}`} className="text-[14px] text-white/60 transition-colors hover:text-future-green">{link.label}</a>)}
           </nav>
           <p className="max-w-[280px] text-[12px] leading-5 text-white/50 laptop:text-right">Сервис для молодых предпринимателей.</p>
         </div>
