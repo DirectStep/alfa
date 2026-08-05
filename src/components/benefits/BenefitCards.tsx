@@ -30,7 +30,7 @@ export function BenefitCards() {
                 </p>
               </div>
 
-              <div className="absolute inset-x-0 bottom-0 h-[80%]">
+              <div className="absolute inset-x-0 bottom-0 h-[62%] laptop:h-[74%]">
                 <Image
                   src={card.image}
                   alt=""

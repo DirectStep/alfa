@@ -1,6 +1,7 @@
 import { heroFeatureCards } from "@/data/heroFeatureCards";
 import { AvatarStack } from "@/components/ui/AvatarStack";
 import { RoundArrowButton } from "@/components/ui/RoundArrowButton";
+import { assetPath } from "@/lib/assetPath";
 
 const variantClasses = {
   lavender: "bg-lavender text-text-primary",
@@ -9,9 +10,9 @@ const variantClasses = {
 } as const;
 
 const communityAvatars = [
-  "/assets/community/avatar-01.png",
-  "/assets/community/avatar-02.png",
-  "/assets/community/avatar-03.png",
+  assetPath("/assets/community/avatar-01.png"),
+  assetPath("/assets/community/avatar-02.png"),
+  assetPath("/assets/community/avatar-03.png"),
 ];
 
 export function HeroFeatureCards() {

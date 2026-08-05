@@ -1,4 +1,5 @@
 import type { BenefitCard } from "@/types";
+import { assetPath } from "@/lib/assetPath";
 
 export const benefitCards: BenefitCard[] = [
   {
@@ -6,20 +7,20 @@ export const benefitCards: BenefitCard[] = [
     variant: "red",
     title: "Сообщество",
     description: "Кейсы, вопросы, люди, связи",
-    image: "/assets/cards/benefit-community.png",
+    image: assetPath("/assets/cards/benefit-community.png"),
   },
   {
     id: "knowledge",
     variant: "lavender",
     title: "Знания",
     description: "Статьи, шаблоны, практические курсы",
-    image: "/assets/cards/benefit-knowledge.png",
+    image: assetPath("/assets/cards/benefit-knowledge.png"),
   },
   {
     id: "ai",
     variant: "light-green",
     title: "AI-помощник",
     description: "Следующий шаг, персональный план, подсказки",
-    image: "/assets/cards/benefit-ai.png",
+    image: assetPath("/assets/cards/benefit-ai.png"),
   },
 ];
