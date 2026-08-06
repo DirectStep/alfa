@@ -46,6 +46,10 @@ body {
   overflow-x: hidden;
 }
 
+.ai-agent-shell {
+  font-feature-settings: "ss01";
+}
+
 html {
   scroll-behavior: smooth;
 }

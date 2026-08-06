@@ -106,7 +106,7 @@ function requestId() {
 }
 
 function diagnostic(event: string, details: Record<string, unknown>) {
-  if (IS_DEVELOPMENT) console.info(`[Альфа-партнёр] ${event}`, details);
+  if (IS_DEVELOPMENT) console.info(`[Альфа-Партнёр] ${event}`, details);
 }
 
 async function readJson(response: Response, id: string) {

@@ -6,8 +6,8 @@ import { AiAgentHowItWorks } from "@/components/ai-agent/AiAgentHowItWorks";
 import { assetPath } from "@/lib/assetPath";
 
 export const metadata: Metadata = {
-  title: "Альфа-партнёр — AI-команда для бизнеса",
-  description: "Альфа-партнёр изучает бизнес, подбирает AI-команду и помогает делегировать задачи профильным агентам.",
+  title: "Альфа-Партнёр — AI-команда для бизнеса",
+  description: "Альфа-Партнёр изучает бизнес, подбирает AI-команду и помогает делегировать задачи профильным агентам.",
 };
 
 export default function AiAgentPage() {

@@ -17,9 +17,8 @@ export function Footer({ homeHref = "#top", sectionHrefPrefix = "" }: { homeHref
           Концепт команды VOLT
         </p>
         <div className="mt-12 flex flex-col gap-9 border-t border-white/20 pt-8 laptop:mt-16 laptop:flex-row laptop:items-center laptop:justify-between">
-          <a href={homeHref} className="flex items-center gap-3">
-            <Image src={assetPath("/assets/brand/alfa-future.svg")} alt="Альфа-Будущее" width={701} height={250} className="h-11 w-auto" />
-            <span className="text-[18px] font-black tracking-[-0.04em]">Альфа-Дело</span>
+          <a href={homeHref} className="flex items-center" aria-label="Альфа-Будущее и Альфа-Дело, в начало страницы">
+            <Image src={assetPath("/assets/brand/alfa-future-x-delo.png")} alt="Альфа-Будущее × Альфа-Дело" width={1280} height={427} className="h-14 w-auto" />
           </a>
           <nav className="flex flex-wrap gap-x-6 gap-y-3" aria-label="Навигация в подвале">
             {footerLinks.map((link) => <a key={link.label} href={`${sectionHrefPrefix}${link.href}`} className="text-[14px] text-white/60 transition-colors hover:text-future-green">{link.label}</a>)}

@@ -25,9 +25,8 @@ export function Header({
   return (
     <header className="relative z-50 bg-alfa-red text-white">
       <Container className="flex h-[76px] items-center justify-between laptop:h-[84px]">
-        <a href={homeHref} className="flex items-center gap-3" aria-label="Альфа-Будущее и Альфа-Дело, в начало страницы">
-          <Image src={assetPath("/assets/brand/alfa-future.svg")} alt="Альфа-Будущее" width={701} height={250} priority className="h-10 w-auto laptop:h-12" />
-          <span className="text-[15px] font-semibold tracking-[-0.03em] text-white laptop:text-[17px]">Альфа-Дело</span>
+        <a href={homeHref} className="flex items-center" aria-label="Альфа-Будущее и Альфа-Дело, в начало страницы">
+          <Image src={assetPath("/assets/brand/alfa-future-x-delo.png")} alt="Альфа-Будущее × Альфа-Дело" width={1280} height={427} priority className="h-11 w-auto laptop:h-14" />
         </a>
 
         {showNavigation && <nav className="hidden items-center gap-7 laptop:flex" aria-label="Основная навигация">

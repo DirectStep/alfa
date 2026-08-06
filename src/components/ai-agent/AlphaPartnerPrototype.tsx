@@ -80,45 +80,43 @@ const MAX_INPUT_LENGTH = 800;
 const FALLBACK_NOTICE = "Сейчас работаем в демо-режиме. Ваши ответы и прогресс сохраняются.";
 const PAYMENT_CONFIRMATION = "Правильно понял, у вас уже есть реальный заказ или предзаказ и нужно принять оплату?";
 const LEGACY_START_MESSAGE = "Расскажите, с чем вы пришли. У вас уже есть работающий бизнес или пока только идея?";
-const START_MESSAGE = "Привет! Я ваш Альфа-партнёр. Помогу развивать действующий бизнес или запустить новый: разберусь в ситуации, соберу AI-команду и предложу следующий шаг. Если появится конкретная финансовая задача, подскажу подходящий продукт Альфа-Банка. С чем вы пришли — у вас уже есть бизнес или пока идея?";
+const START_MESSAGE = "Привет! Я ваш Альфа-Партнёр. Помогу развивать действующий бизнес или запустить новый: разберусь в ситуации, соберу AI-команду и предложу следующий шаг. Если появится конкретная финансовая задача, подскажу подходящий продукт Альфа-Банка. С чем вы пришли — у вас уже есть бизнес или пока идея?";
 const START_REPLIES = ["У меня уже есть бизнес", "У меня есть бизнес-идея", "Хочу запустить новый продукт"];
+const PROCESS_STEPS = ["Расскажите о бизнесе", "Получите AI-команду", "Делегируйте задачи", "Соберите результат"];
+const HERO_ROLES = ["marketer", "finance", "copywriter"];
 
 const ONBOARDING_SLIDES = [
   {
     number: "1",
-    title: "Расскажите о бизнесе",
-    text: "Опишите работающий бизнес или идею своими словами. Альфа-партнёр уточнит только недостающие данные.",
-    note: "Не нужно заполнять длинную анкету.",
+    title: "Собирает контекст",
+    text: "Альфа-Партнёр узнаёт, что за бизнес или идея у вас сейчас, какие цели и какие задачи стоят первыми.",
+    note: "Расскажите всё своими словами — без длинной анкеты.",
     color: "bg-alfa-red text-white",
     image: "/assets/ai/onboarding/business-context.webp",
-    action: "Показать, как подбирается команда",
   },
   {
     number: "2",
-    title: "Получите команду под задачу",
-    text: "Система подберёт 3–5 специалистов из фиксированного списка и объяснит, зачем каждый нужен именно вашему проекту.",
+    title: "Подбирает AI-команду",
+    text: "На основе контекста он выбирает 3–5 специалистов, которые нужны именно вашему проекту.",
     note: "Маркетолог · Финансовый аналитик · Копирайтер · Дизайнер",
     color: "bg-future-blue text-white",
     image: "/assets/ai/onboarding/team.webp",
-    action: "Посмотреть, как делегировать",
   },
   {
     number: "3",
-    title: "Делегируйте работу",
-    text: "У каждого специалиста будет отдельный чат, роль и история. Все агенты учитывают общий контекст бизнеса.",
+    title: "Помогает делегировать задачи",
+    text: "Откройте отдельный чат с нужным специалистом и поставьте ему одну конкретную задачу.",
     note: "Вы сами выбираете, кому поставить следующую задачу.",
     color: "bg-future-purple text-white",
     image: "/assets/ai/onboarding/delegated-task.webp",
-    action: "Узнать, как собрать результат",
   },
   {
     number: "4",
-    title: "Соберите общий результат",
-    text: "Передавайте итоги специалистов Альфа-партнёру. Он учтёт их и предложит следующий шаг.",
+    title: "Объединяет результат",
+    text: "Когда специалисты отработали, Альфа-Партнёр собирает их ответы и предлагает следующий шаг.",
     note: "Продукт Альфы появится только при конкретной финансовой задаче.",
     color: "bg-future-green text-black",
     image: "/assets/ai/onboarding/result.webp",
-    action: "Собрать мою команду",
   },
 ] as const;
 
@@ -212,9 +210,21 @@ function countUserMessages(messages: Message[]) {
   return messages.filter((message) => message.role === "user").length;
 }
 
+function normalizeBrandText(text: string) {
+  return text
+    .replaceAll("Альфа-партнёру", "Альфа-Партнёру")
+    .replaceAll("Альфа-партнёра", "Альфа-Партнёра")
+    .replaceAll("Альфа-партнёр", "Альфа-Партнёр");
+}
+
+function normalizeMessagesBranding(messages: Message[]) {
+  return messages.map((message) => ({ ...message, text: normalizeBrandText(message.text) }));
+}
+
 function normalizeInitialGreeting(messages: Message[]) {
-  if (messages[0]?.role !== "agent" || messages[0].text !== LEGACY_START_MESSAGE) return messages;
-  return [{ ...messages[0], text: START_MESSAGE }, ...messages.slice(1)];
+  const normalized = normalizeMessagesBranding(messages);
+  if (normalized[0]?.role !== "agent" || normalized[0].text !== LEGACY_START_MESSAGE) return normalized;
+  return [{ ...normalized[0], text: START_MESSAGE }, ...normalized.slice(1)];
 }
 
 function withoutTrailingDemo(messages: Message[], replaceDemo: boolean) {
@@ -331,7 +341,7 @@ function RoleAvatar({ id, size = "md" }: { id: string; size?: "sm" | "md" | "lg"
   if (id === "alpha-partner") {
     return (
       <span className={`${dimensions} relative shrink-0 overflow-hidden rounded-[16px] bg-future-blue`}>
-        <Image src={assetPath("/assets/ai/alfa-agent.png")} alt="Аватар Альфа-партнёра" fill sizes="64px" className="object-cover object-top" />
+        <Image src={assetPath("/assets/ai/alfa-agent.png")} alt="Аватар Альфа-Партнёра" fill sizes="64px" className="object-cover object-top" />
       </span>
     );
   }
@@ -422,7 +432,17 @@ export function AlphaPartnerPrototype() {
         if (stored) {
           const parsed: unknown = JSON.parse(stored);
           const clean = sanitizePartnerState(parsed);
-          if (isStoredState(clean)) setState({ ...clean, passport: normalizePassport(clean.passport), partnerHistory: normalizeInitialGreeting(clean.partnerHistory) });
+          if (isStoredState(clean)) {
+            const agentThreads = Object.fromEntries(
+              Object.entries(clean.agentThreads).map(([agentId, messages]) => [agentId, normalizeMessagesBranding(messages)]),
+            );
+            setState({
+              ...clean,
+              passport: normalizePassport(clean.passport),
+              partnerHistory: normalizeInitialGreeting(clean.partnerHistory),
+              agentThreads,
+            });
+          }
         } else {
           const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
           if (legacy) {
@@ -482,6 +502,13 @@ export function AlphaPartnerPrototype() {
     ["Стадия", state.passport.stage],
     ["Цель", state.passport.goal],
   ], [state.passport]);
+  const currentProcessStep = state.teamSummaries.length > 0
+    ? 3
+    : state.teamConfirmed
+      ? 2
+      : state.phase === "context_ready" || state.phase === "team_review"
+        ? 1
+        : 0;
 
   function openAgent(agentId: string) {
     if (agentId === "alpha-partner") {
@@ -663,7 +690,7 @@ export function AlphaPartnerPrototype() {
             ...current.agentThreads,
             [currentAgentId]: [
               ...withoutTrailingDemo(current.agentThreads[currentAgentId] ?? [], Boolean(retryRequest)),
-              makeMessage("agent", "Передаю финансовую потребность Альфа-партнёру для подтверждения."),
+              makeMessage("agent", "Передаю финансовую потребность Альфа-Партнёру для подтверждения."),
             ],
           };
           return {
@@ -754,11 +781,16 @@ export function AlphaPartnerPrototype() {
         partnerHistory: [...current.partnerHistory, makeMessage("agent", `Получил результат от специалиста «${agent.name}». Учту его, когда будем выбирать следующий шаг.`)],
       };
     });
-    setToast("Результат передан Альфа-партнёру");
+    setToast("Результат передан Альфа-Партнёру");
   }
 
   function openOnboarding() {
     setOnboardingOpen(true);
+  }
+
+  function focusChat() {
+    document.getElementById("alpha-partner-chat")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
   }
 
   function closeOnboarding(focusChat = false) {
@@ -782,52 +814,81 @@ export function AlphaPartnerPrototype() {
   }
 
   if (!hydrated) {
-    return <section className="min-h-[560px] bg-surface" aria-label="Загрузка Альфа-партнёра" />;
+    return <section className="min-h-[560px] bg-surface" aria-label="Загрузка Альфа-Партнёра" />;
   }
 
   return (
-    <section className="ai-agent-shell bg-surface py-7 text-black sm:py-9 laptop:py-10">
-      <Container className="ai-agent-container">
-        <div className="mx-auto max-w-[1180px]">
-          <div className="flex flex-col gap-5 border-b border-black/10 pb-6 sm:pb-7 laptop:flex-row laptop:items-end laptop:justify-between">
-            <div className="max-w-[790px]">
-              <h1 className="text-[36px] font-bold leading-[0.96] tracking-[-0.05em] sm:text-[48px] laptop:text-[58px]">Соберите AI-команду под свой бизнес</h1>
-              <p className="mt-4 max-w-[760px] text-[15px] leading-6 text-black/60 sm:text-[17px] sm:leading-7">Расскажите о бизнесе или идее. Альфа-партнёр изучит задачу, подберёт специалистов и поможет распределить работу.</p>
+    <section className="ai-agent-shell overflow-hidden bg-surface pb-16 text-black sm:pb-20 laptop:pb-24">
+      <div className="bg-alfa-red text-white">
+        <Container className="ai-agent-container">
+          <div className="mx-auto max-w-[1180px]">
+          <div className="grid min-h-[430px] items-center gap-7 py-9 sm:py-11 laptop:grid-cols-[minmax(0,1.05fr)_minmax(390px,.75fr)] laptop:gap-12 laptop:py-12">
+            <div className="relative z-10 max-w-[760px]">
+              <h1 className="max-w-[720px] text-[42px] font-black leading-[0.9] tracking-[-0.065em] sm:text-[62px] laptop:text-[72px]">Соберите AI-команду под свой бизнес</h1>
+              <p className="mt-6 max-w-[680px] text-[16px] font-medium leading-6 text-white/76 sm:text-[19px] sm:leading-8">Расскажите о бизнесе или идее. Альфа-Партнёр изучит задачу, подберёт специалистов и поможет распределить работу.</p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <button type="button" onClick={focusChat} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-[16px] bg-future-green px-7 text-[14px] font-bold text-black transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Собрать команду <ArrowRight size={18} /></button>
+                <button ref={howItWorksRef} type="button" onClick={openOnboarding} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-[16px] bg-white px-7 text-[14px] font-bold text-black ring-1 ring-black/12 transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black">Как это работает <ArrowRight size={18} /></button>
+              </div>
+              <p className="mt-6 flex items-center gap-2 text-[11px] font-bold text-white/68 sm:text-[12px]"><span className="h-2.5 w-2.5 rounded-full bg-future-green ring-4 ring-future-green/20" />Один партнёр · до пяти профильных AI-специалистов</p>
             </div>
-            <button ref={howItWorksRef} type="button" onClick={openOnboarding} className="inline-flex min-h-12 shrink-0 items-center gap-3 self-start rounded-full bg-future-green px-6 text-[13px] font-bold text-black transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-alfa-red">Как это работает <ArrowRight size={17} /></button>
-          </div>
 
-          <div className="ai-agent-chat mt-6 flex h-[clamp(560px,72dvh,720px)] min-h-[520px] max-h-[720px] flex-col overflow-hidden rounded-[30px] bg-white ring-1 ring-black/8 sm:min-h-[560px]">
-            <header className="flex min-h-[76px] items-center justify-between gap-3 border-b border-black/8 px-4 sm:px-6">
+            <div className="relative mx-auto hidden h-[390px] w-full max-w-[480px] laptop:block" aria-hidden="true">
+              <div className="absolute inset-0 overflow-hidden rounded-[42px] bg-future-blue">
+                <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-future-purple" />
+                <div className="absolute -bottom-16 -left-10 h-52 w-52 rounded-full bg-future-green" />
+                <Image src={assetPath("/assets/ai/alfa-agent.png")} alt="" fill priority sizes="480px" className="z-10 object-contain object-bottom drop-shadow-[0_22px_22px_rgba(0,0,0,0.22)]" />
+              </div>
+              <div className="absolute -left-8 top-8 z-20 rounded-[18px] bg-white px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,.14)]">
+                <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-black/35">Главный координатор</p>
+                <p className="mt-1 text-[14px] font-bold">Альфа-Партнёр</p>
+              </div>
+              <div className="absolute -bottom-5 right-5 z-20 flex gap-2">
+                {HERO_ROLES.map((agentId) => {
+                  const agent = getAgentDefinition(agentId);
+                  return <span key={agentId} className="flex items-center gap-2 rounded-full bg-black px-3 py-2 text-[10px] font-bold text-white shadow-lg"><StatusDot status="ready" />{agent?.name}</span>;
+                })}
+              </div>
+            </div>
+          </div>
+          </div>
+        </Container>
+      </div>
+
+      <Container className="ai-agent-container">
+        <div className="mx-auto max-w-[1180px] pt-6 sm:pt-8">
+          <div id="alpha-partner-chat" className="ai-agent-chat scroll-mt-5 flex h-[clamp(590px,74dvh,760px)] min-h-[560px] max-h-[760px] flex-col overflow-hidden rounded-[30px] bg-white shadow-[0_24px_70px_rgba(0,0,0,.1)] ring-1 ring-black/8 sm:min-h-[600px] sm:rounded-[36px]">
+            <div className="h-2 shrink-0 bg-alfa-red" aria-hidden="true" />
+            <header className="flex min-h-[82px] items-center justify-between gap-3 border-b border-black/8 px-4 sm:px-7">
               <div className="flex min-w-0 items-center gap-3">
                 <RoleAvatar id={state.activeAgentId} />
                 <div className="min-w-0">
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="truncate text-[14px] font-bold sm:text-[16px]">{activeIsPartner ? "AI-агент Альфа-партнёр" : activeMember?.name || activeDefinition?.name}</p>
+                  <div className="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-x-2">
+                    <p className="whitespace-nowrap text-[12px] font-bold sm:text-[16px]">{activeIsPartner ? <>AI-агент <span className="text-alfa-red">Альфа-Партнёр</span></> : activeMember?.name || activeDefinition?.name}</p>
                     <ConnectionBadge status={connectionStatus} />
                   </div>
                   <p className="truncate text-[10px] text-black/45 sm:text-[12px]">{activeIsPartner ? "Изучает бизнес, собирает команду и координирует задачи" : activeDefinition?.description}</p>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                {!activeIsPartner && <button type="button" onClick={() => openAgent("alpha-partner")} className="hidden min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[11px] font-bold hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue sm:inline-flex"><ArrowLeft size={14} />К Альфа-партнёру</button>}
-                {!activeIsPartner && <button type="button" onClick={() => openAgent("alpha-partner")} className="grid h-11 w-11 place-items-center rounded-full bg-muted text-black sm:hidden" aria-label="Вернуться к Альфа-партнёру"><ArrowLeft size={17} /></button>}
-                {state.teamConfirmed && <button type="button" onClick={() => setTeamPanelOpen(true)} aria-label={`Моя команда · ${state.team.length}`} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-black px-3.5 text-[11px] font-bold text-white hover:bg-black/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue"><Users size={15} /><span className="hidden sm:inline">Моя команда · </span>{state.team.length}</button>}
-                <button type="button" onClick={() => setResetOpen(true)} title="Начать заново" className="grid h-11 w-11 place-items-center rounded-full bg-muted text-black/55 hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue" aria-label="Начать заново"><RotateCcw size={17} /></button>
+                {!activeIsPartner && <button type="button" onClick={() => openAgent("alpha-partner")} className="hidden min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[11px] font-bold hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue sm:inline-flex"><ArrowLeft size={14} />К Альфа-Партнёру</button>}
+                {!activeIsPartner && <button type="button" onClick={() => openAgent("alpha-partner")} className="grid h-11 w-11 place-items-center rounded-full bg-muted text-black sm:hidden" aria-label="Вернуться к Альфа-Партнёру"><ArrowLeft size={17} /></button>}
+                {state.teamConfirmed && <button type="button" onClick={() => setTeamPanelOpen(true)} aria-label={`Моя команда · ${state.team.length}`} className="inline-flex min-h-11 items-center gap-2 rounded-[14px] bg-black px-3.5 text-[11px] font-bold text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue"><Users size={15} /><span className="hidden sm:inline">Моя команда · </span>{state.team.length}</button>}
+                <button type="button" onClick={() => setResetOpen(true)} title="Начать заново" className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-muted px-3 text-[11px] font-bold text-black/55 hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue" aria-label="Начать заново"><RotateCcw size={17} /><span className="hidden laptop:inline">Начать заново</span></button>
               </div>
             </header>
 
-            <div ref={chatRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f7f7f8] px-4 py-5 sm:px-6 sm:py-6" aria-live="polite">
+            <div ref={chatRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f1f2f4] px-4 py-5 sm:px-7 sm:py-7" aria-live="polite">
               <div className="mx-auto flex w-full max-w-[920px] flex-col gap-3">
                 {activeMessages.map((message) => (
                   <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[88%] whitespace-pre-line rounded-[20px] px-4 py-3 text-[13px] leading-5 sm:max-w-[74%] sm:px-5 sm:text-[14px] sm:leading-6 ${message.role === "user" ? "rounded-br-[6px] bg-black text-white" : "rounded-bl-[6px] bg-white text-black ring-1 ring-black/6"}`}>{message.text}</div>
+                    <div className={`max-w-[90%] whitespace-pre-line rounded-[22px] px-4 py-3.5 text-[13px] font-medium leading-5 sm:max-w-[76%] sm:px-5 sm:py-4 sm:text-[14px] sm:leading-6 ${message.role === "user" ? "rounded-br-[7px] bg-black text-white" : "rounded-bl-[7px] bg-white text-black shadow-[0_5px_18px_rgba(0,0,0,.045)] ring-1 ring-black/6"}`}>{message.text}</div>
                   </div>
                 ))}
 
                 {systemNotice && <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] bg-black/[0.045] px-4 py-3 text-[11px] text-black/60" role="status"><span>{systemNotice}</span><button type="button" onClick={() => void retryConnection()} disabled={loading || connectionStatus === "checking"} className="min-h-9 rounded-full bg-white px-4 font-bold text-black ring-1 ring-black/10 disabled:opacity-45">Повторить подключение</button></div>}
 
-                {loading && <div className="flex justify-start"><div className="rounded-[20px] rounded-bl-[6px] bg-white px-5 py-3 text-[13px] text-black/55 ring-1 ring-black/6">{activeIsPartner ? "Альфа-партнёр анализирует ответ…" : `${activeMember?.name || "Агент"} готовит результат…`}</div></div>}
+                {loading && <div className="flex justify-start"><div className="rounded-[20px] rounded-bl-[6px] bg-white px-5 py-3 text-[13px] text-black/55 ring-1 ring-black/6">{activeIsPartner ? "Альфа-Партнёр анализирует ответ…" : `${activeMember?.name || "Агент"} готовит результат…`}</div></div>}
 
                 {activeIsPartner && state.phase === "context_ready" && !loading && (
                   <ContextCard passport={state.passport} onBuild={() => setState((current) => ({ ...current, phase: "team_review" }))} />
@@ -855,7 +916,7 @@ export function AlphaPartnerPrototype() {
                   <div className="ml-auto w-full max-w-[560px] rounded-[22px] bg-future-green p-4 text-black sm:p-5">
                     <p className="text-[10px] font-bold uppercase tracking-[0.08em]">Результат готов</p>
                     <p className="mt-2 text-[13px] leading-5">Передайте короткий итог главному партнёру — он учтёт его в общем маршруте.</p>
-                    <button type="button" onClick={transferResult} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-black px-5 text-[11px] font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">Передать результат Альфа-партнёру <ArrowRight size={14} /></button>
+                    <button type="button" onClick={transferResult} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-black px-5 text-[11px] font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">Передать результат Альфа-Партнёру <ArrowRight size={14} /></button>
                   </div>
                 )}
 
@@ -879,28 +940,52 @@ export function AlphaPartnerPrototype() {
               </div>
             </div>
 
-            <form onSubmit={onSubmit} className="border-t border-black/8 bg-white p-3 sm:p-4">
-              <div className="mx-auto flex max-w-[920px] items-end gap-2 rounded-[18px] bg-white p-2 ring-1 ring-black/15 focus-within:ring-2 focus-within:ring-future-blue">
-                <textarea ref={inputRef} value={input} disabled={loading} onChange={(event) => { setInput(event.target.value); if (inputError) setInputError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitAnswer(input); } }} rows={1} maxLength={MAX_INPUT_LENGTH + 1} placeholder={activeIsPartner ? "Расскажите о бизнесе или задаче…" : `Поставьте задачу: ${activeDefinition?.name.toLowerCase()}…`} className="max-h-28 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-3 py-3 text-[13px] leading-5 outline-none placeholder:text-black/55 disabled:opacity-60" aria-describedby={inputError ? "alpha-input-error" : undefined} />
-                <button type="submit" disabled={loading} className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-alfa-red text-white disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red" aria-label="Отправить сообщение"><Send size={17} /></button>
+            <form onSubmit={onSubmit} className="border-t border-black/8 bg-white p-3 sm:p-5">
+              <div className="mx-auto flex max-w-[920px] items-end gap-2 rounded-[20px] bg-muted p-2.5 ring-1 ring-black/12 transition-shadow focus-within:bg-white focus-within:ring-2 focus-within:ring-future-blue">
+                <textarea ref={inputRef} value={input} disabled={loading} onChange={(event) => { setInput(event.target.value); if (inputError) setInputError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitAnswer(input); } }} rows={1} maxLength={MAX_INPUT_LENGTH + 1} placeholder={activeIsPartner ? "Расскажите о бизнесе или задаче…" : `Поставьте задачу: ${activeDefinition?.name.toLowerCase()}…`} className="max-h-28 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-3 py-3 text-[13px] font-medium leading-5 outline-none placeholder:text-black/48 disabled:opacity-60" aria-describedby={inputError ? "alpha-input-error" : undefined} />
+                <button type="submit" disabled={loading} className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-alfa-red text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red" aria-label="Отправить сообщение"><Send size={17} /></button>
               </div>
               <div className="mx-auto mt-1.5 flex max-w-[920px] justify-between px-2 text-[9px]"><p id="alpha-input-error" className="font-bold text-alfa-red">{inputError}</p><span className="ml-auto text-black/30">{input.length}/{MAX_INPUT_LENGTH}</span></div>
             </form>
           </div>
 
-          <div className="mt-5 rounded-[24px] bg-white p-4 ring-1 ring-black/8 sm:p-5">
-            <ol className="grid grid-cols-2 gap-x-4 gap-y-3 text-[11px] font-bold text-black/45 sm:flex sm:items-center sm:gap-3 sm:text-[12px]">
-              {["Расскажите о бизнесе", "Получите AI-команду", "Делегируйте задачи", "Соберите результат"].map((label, index) => (
-                <li key={label} className="flex items-center gap-2"><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${index === 0 && state.phase === "collecting" ? "bg-alfa-red text-white" : state.teamConfirmed || index < (state.phase === "context_ready" || state.phase === "team_review" ? 2 : 1) ? "bg-future-green text-black" : "bg-muted text-black/45"}`}>{state.teamConfirmed || index < (state.phase === "context_ready" || state.phase === "team_review" ? 2 : 1) ? <Check size={13} /> : index + 1}</span><span>{label}</span>{index < 3 && <ChevronRight className="hidden text-black/20 sm:block" size={15} />}</li>
-              ))}
-            </ol>
+          <div className="mt-6 grid gap-4 laptop:grid-cols-[1.08fr_.92fr]">
+            <div className="overflow-hidden rounded-[28px] bg-black p-5 text-white sm:p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/45">Маршрут работы</p>
+                  <h2 className="mt-1 text-[22px] font-bold tracking-[-0.035em]">От контекста к результату</h2>
+                </div>
+                <span className="rounded-full bg-white/10 px-3 py-2 text-[10px] font-bold text-white/70">Шаг {currentProcessStep + 1} из 4</span>
+              </div>
+              <ol className="mt-6 grid gap-2 sm:grid-cols-4">
+                {PROCESS_STEPS.map((label, index) => {
+                  const completed = index < currentProcessStep;
+                  const active = index === currentProcessStep;
+                  return (
+                    <li key={label} className={`min-h-[108px] rounded-[18px] p-3.5 transition-colors ${active ? "bg-alfa-red text-white" : completed ? "bg-future-green text-black" : "bg-white/8 text-white/42"}`}>
+                      <span className={`grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold ${active ? "bg-white text-alfa-red" : completed ? "bg-black text-white" : "bg-white/10 text-white/55"}`}>{completed ? <Check size={14} /> : index + 1}</span>
+                      <p className="mt-4 text-[11px] font-bold leading-4">{label}</p>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
 
-            <div className="mt-4 grid gap-px overflow-hidden rounded-[16px] bg-black/8 sm:grid-cols-4">
-              {passportFields.map(([label, value]) => (
-                <div key={label} className="min-w-0 bg-muted px-4 py-3"><p className="text-[9px] font-bold uppercase tracking-[0.08em] text-black/35">{label}</p><p className="mt-1 truncate text-[12px] font-bold">{value || "Уточняется"}</p></div>
-              ))}
+            <div className="relative overflow-hidden rounded-[28px] bg-white p-5 ring-1 ring-black/8 sm:p-6">
+              <div className="absolute right-0 top-0 h-24 w-3 bg-alfa-red" aria-hidden="true" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-alfa-red">Паспорт бизнеса</p>
+              <h2 className="mt-1 text-[22px] font-bold tracking-[-0.035em]">Контекст всегда с командой</h2>
+              <p className="mt-2 max-w-[470px] text-[12px] leading-5 text-black/55">Агенты видят эти данные, поэтому не заставляют вас повторять вводную в каждом чате.</p>
+              <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5">
+                {passportFields.map(([label, value]) => (
+                  <div key={label} className="min-w-0 border-t border-black/10 pt-3"><dt className="text-[10px] font-bold uppercase tracking-[0.09em] text-black/45">{label}</dt><dd className="mt-1.5 truncate text-[13px] font-bold">{value || "Уточняется"}</dd></div>
+                ))}
+              </dl>
             </div>
           </div>
+
+          {state.teamConfirmed && <TeamShowcase team={state.team} statuses={state.agentStatuses} onOpen={openAgent} onOpenAll={() => setTeamPanelOpen(true)} />}
         </div>
       </Container>
 
@@ -909,6 +994,40 @@ export function AlphaPartnerPrototype() {
       {resetOpen && <ConfirmModal title="Начать заново?" text="Текущая команда, отдельные диалоги и переданные результаты будут удалены из браузера." confirmLabel="Начать заново" onConfirm={restart} onClose={() => setResetOpen(false)} />}
       {paymentOpen && <PaymentModal onClose={() => setPaymentOpen(false)} />}
       {toast && <div className="fixed bottom-5 left-1/2 z-[130] flex -translate-x-1/2 items-center gap-2 rounded-full bg-black px-5 py-3 text-[12px] font-bold text-white shadow-lg" role="status"><Check size={15} className="text-future-green" />{toast}</div>}
+    </section>
+  );
+}
+
+function TeamShowcase({ team, statuses, onOpen, onOpenAll }: { team: ChatTeamMember[]; statuses: Record<string, AgentStatus>; onOpen: (id: string) => void; onOpenAll: () => void }) {
+  return (
+    <section className="mt-16 sm:mt-20" aria-labelledby="team-showcase-title">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-alfa-red">Персональная AI-команда</p>
+          <h2 id="team-showcase-title" className="mt-2 max-w-[760px] text-[34px] font-black leading-[0.94] tracking-[-0.055em] sm:text-[48px]">Специалисты уже знают ваш бизнес</h2>
+          <p className="mt-4 max-w-[720px] text-[14px] font-medium leading-6 text-black/55 sm:text-[16px]">Откройте нужного агента, поставьте задачу и передайте готовый результат Альфа-Партнёру.</p>
+        </div>
+        <button type="button" onClick={onOpenAll} className="inline-flex min-h-13 shrink-0 items-center justify-center gap-3 self-start rounded-[15px] bg-black px-6 text-[13px] font-bold text-white transition-transform hover:-translate-y-0.5 sm:self-auto">Открыть мою команду <Users size={17} /></button>
+      </div>
+
+      <div className="mt-8 grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
+        {team.map((member, index) => {
+          const status = statuses[member.id] ?? "idle";
+          const tones = ["bg-future-blue text-white", "bg-future-purple text-white", "bg-future-green text-black", "bg-alfa-red text-white", "bg-black text-white"];
+          return (
+            <article key={member.id} className={`flex min-h-[290px] flex-col rounded-[28px] p-5 sm:p-6 ${tones[index % tones.length]}`}>
+              <div className="flex items-start justify-between gap-3">
+                <RoleAvatar id={member.id} size="lg" />
+                <span className="rounded-full bg-white/18 px-3 py-2 text-[9px] font-bold backdrop-blur-sm">{STATUS_LABELS[status]}</span>
+              </div>
+              <h3 className="mt-8 text-[23px] font-bold leading-[1.02] tracking-[-0.035em]">{member.name}</h3>
+              <p className="mt-3 text-[11px] font-medium leading-5 opacity-70">{member.reason}</p>
+              <p className="mt-4 border-t border-current/20 pt-4 text-[10px] font-bold leading-4"><span className="block opacity-55">Первая задача</span>{member.firstTask}</p>
+              <button type="button" onClick={() => onOpen(member.id)} className="mt-auto inline-flex min-h-11 items-center justify-between gap-3 rounded-[13px] bg-white px-4 text-[11px] font-bold text-black transition-transform hover:-translate-y-0.5">Открыть чат <ArrowRight size={15} /></button>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -955,10 +1074,10 @@ function OnboardingCarousel({ onClose, onStart }: { onClose: () => void; onStart
   }, [dialogRef]);
 
   return (
-    <div className="fixed inset-0 z-[150] grid place-items-center overflow-y-auto bg-black/60 p-3 backdrop-blur-[2px] sm:p-5" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+    <div className="fixed inset-0 z-[150] grid place-items-center overflow-y-auto bg-black/65 p-3 backdrop-blur-[5px] sm:p-5" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
       <div
         ref={dialogRef}
-        className="my-auto w-full max-w-[520px]"
+        className="my-auto w-full max-w-[560px]"
         onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX ?? null; }}
         onTouchEnd={(event) => {
           if (touchStartX.current === null) return;
@@ -970,33 +1089,33 @@ function OnboardingCarousel({ onClose, onStart }: { onClose: () => void; onStart
           touchStartX.current = null;
         }}
       >
-        <div className={`relative h-[min(760px,calc(100dvh-24px))] min-h-[650px] overflow-hidden rounded-[26px] shadow-2xl sm:h-[min(740px,calc(100dvh-40px))] sm:rounded-[30px] ${slide.color}`}>
-          <div className={`absolute left-7 right-7 top-8 z-30 h-1 overflow-hidden rounded-full ${index === 3 ? "bg-black/12" : "bg-white/18"}`} aria-hidden="true">
-            <span className={`block h-full rounded-full transition-[width] duration-300 ${index === 3 ? "bg-black/55" : "bg-white/70"}`} style={{ width: `${((index + 1) / ONBOARDING_SLIDES.length) * 100}%` }} />
+        <div className={`relative h-[min(780px,calc(100dvh-24px))] min-h-[640px] overflow-hidden rounded-[28px] shadow-[0_34px_100px_rgba(0,0,0,.34)] sm:h-[min(760px,calc(100dvh-40px))] sm:rounded-[36px] ${slide.color}`}>
+          <div className="absolute left-7 right-7 top-7 z-30 grid grid-cols-4 gap-2 sm:left-10 sm:right-10" aria-hidden="true">
+            {ONBOARDING_SLIDES.map((_, progressIndex) => <span key={progressIndex} className={`h-1 rounded-full transition-colors duration-300 ${progressIndex <= index ? index === 3 ? "bg-black/60" : "bg-white/80" : index === 3 ? "bg-black/14" : "bg-white/20"}`} />)}
           </div>
 
-          <div className="absolute left-7 right-7 top-[68px] z-30 flex items-center justify-between gap-4 sm:left-10 sm:right-10">
-            <span className="text-[12px] font-bold">Альфа-партнёр · шаг {index + 1}</span>
-            <button type="button" onClick={onClose} title="Пропустить" className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${index === 3 ? "hover:bg-black/10" : "hover:bg-white/12"}`} aria-label="Пропустить приветствие"><X size={21} /></button>
+          <div className="absolute left-7 right-7 top-[58px] z-30 flex items-center justify-between gap-4 sm:left-10 sm:right-10">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] opacity-70">Как работает · {index + 1}/4</span>
+            <button type="button" onClick={onClose} className={`inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-[11px] font-bold transition-colors ${index === 3 ? "hover:bg-black/10" : "hover:bg-white/12"}`} aria-label="Пропустить приветствие">Пропустить <X size={18} /></button>
           </div>
 
-          <div key={index} className="onboarding-slide absolute inset-x-0 top-[128px] z-20 px-7 sm:px-10">
-            <h2 id="onboarding-title" className="max-w-[430px] text-[30px] font-bold leading-[1.02] tracking-[-0.04em] sm:text-[34px]">{slide.title}</h2>
-            <p className={`mt-3 max-w-[420px] text-[15px] font-medium leading-[1.55] sm:text-[16px] ${index === 3 ? "text-black/72" : "text-white/82"}`}>{slide.text}</p>
-            <p className={`mt-3 max-w-[420px] text-[12px] font-bold leading-5 sm:text-[13px] ${index === 3 ? "text-black" : "text-white"}`}>{slide.note}</p>
-            <button type="button" onClick={index === ONBOARDING_SLIDES.length - 1 ? onStart : next} className={`mt-5 min-h-12 rounded-[12px] px-5 text-[12px] font-bold sm:px-6 sm:text-[13px] ${index === 3 ? "bg-black text-white" : "bg-future-green text-black"}`}>{slide.action}</button>
+          <div key={index} className="onboarding-slide absolute inset-x-0 top-[122px] z-20 px-7 sm:px-10">
+            <span className={`text-[74px] font-black leading-none tracking-[-0.08em] sm:text-[86px] ${index === 3 ? "text-black/18" : "text-white/22"}`}>{slide.number}</span>
+            <h2 id="onboarding-title" className="mt-1 max-w-[470px] text-[31px] font-black leading-[0.98] tracking-[-0.05em] sm:text-[38px]">{slide.title}</h2>
+            <p className={`mt-4 max-w-[450px] text-[14px] font-medium leading-[1.55] sm:text-[16px] ${index === 3 ? "text-black/68" : "text-white/82"}`}>{slide.text}</p>
+            <p className={`mt-3 max-w-[440px] text-[11px] font-bold leading-5 sm:text-[12px] ${index === 3 ? "text-black" : "text-white"}`}>{slide.note}</p>
           </div>
 
-          <div className="absolute inset-x-0 bottom-0 z-10 h-[43%] sm:h-[45%]" aria-hidden="true">
-            <Image src={assetPath(slide.image)} alt="" fill sizes="(max-width: 640px) 92vw, 520px" className={`object-contain object-bottom ${index === 1 || index === 3 ? "scale-[1.08]" : "scale-[1.16]"}`} />
+          <div className="absolute inset-x-0 bottom-0 z-10 h-[42%] sm:h-[44%]" aria-hidden="true">
+            <Image src={assetPath(slide.image)} alt="" fill sizes="(max-width: 640px) 94vw, 560px" className={`object-contain object-bottom drop-shadow-[0_18px_22px_rgba(0,0,0,.16)] ${index === 1 || index === 3 ? "scale-[1.06]" : "scale-[1.14]"}`} />
           </div>
 
           <div className="absolute bottom-7 left-7 right-7 z-30 flex items-end justify-between gap-3 sm:bottom-9 sm:left-10 sm:right-10">
-            <button type="button" onClick={previous} disabled={index === 0} aria-label="Предыдущая карточка" className={`grid h-12 w-12 place-items-center rounded-[12px] disabled:opacity-35 ${index === 3 ? "bg-white/60 text-black" : "bg-white/25 text-white backdrop-blur-sm"}`}><ArrowLeft size={19} /></button>
+            <button type="button" onClick={previous} disabled={index === 0} aria-label="Предыдущая карточка" className={`inline-flex min-h-12 items-center gap-2 rounded-[13px] px-4 text-[11px] font-bold disabled:opacity-35 ${index === 3 ? "bg-white/60 text-black" : "bg-white/25 text-white backdrop-blur-sm"}`}><ArrowLeft size={18} />Назад</button>
             <div className="sr-only" aria-live="polite">Карточка {index + 1} из {ONBOARDING_SLIDES.length}</div>
             {index < ONBOARDING_SLIDES.length - 1
-              ? <button type="button" onClick={next} aria-label="Следующая карточка" className="grid h-12 w-12 place-items-center rounded-[12px] bg-black text-white"><ArrowRight size={19} /></button>
-              : <button type="button" onClick={onStart} className="min-h-12 rounded-[12px] bg-black px-5 text-[12px] font-bold text-white">Начать <ArrowRight size={16} className="ml-2 inline" /></button>}
+              ? <button type="button" onClick={next} aria-label="Следующая карточка" className="inline-flex min-h-12 items-center gap-2 rounded-[13px] bg-black px-5 text-[11px] font-bold text-white">Дальше <ArrowRight size={18} /></button>
+              : <button type="button" onClick={onStart} className="inline-flex min-h-12 items-center gap-2 rounded-[13px] bg-black px-5 text-[11px] font-bold text-white">Начать работу <ArrowRight size={17} /></button>}
           </div>
 
         </div>
@@ -1018,12 +1137,12 @@ function ContextCard({ passport, onBuild }: { passport: BusinessPassport; onBuil
 
 function TeamProposal({ team, editing, passport, onEdit, onCancelEdit, onRemove, onAdd, onConfirm, onOpen }: { team: ChatTeamMember[]; editing: boolean; passport: BusinessPassport; onEdit: () => void; onCancelEdit: () => void; onRemove: (id: string) => void; onAdd: (id: string) => void; onConfirm: () => void; onOpen: (id: string) => void }) {
   const available = AGENT_REGISTRY.filter((agent) => !team.some((member) => member.id === agent.id));
-  return <div className="rounded-[26px] bg-white p-4 ring-1 ring-black/8 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-future-purple">Команда Альфа-партнёра</p><h2 className="mt-1 text-[24px] font-bold tracking-[-0.03em]">Ваша AI-команда готова</h2><p className="mt-2 max-w-[680px] text-[12px] leading-5 text-black/55">Альфа-партнёр выбрал специалистов под ваш проект, текущую стадию и задачи.</p></div><span className="self-start rounded-full bg-future-green px-3 py-1.5 text-[10px] font-bold">{team.length} специалиста</span></div><div className="mt-5 grid gap-3 md:grid-cols-2">{team.map((member) => <article key={member.id} className="flex min-h-[190px] flex-col rounded-[20px] bg-muted p-4"><div className="flex items-start gap-3"><RoleAvatar id={member.id} /><div className="min-w-0"><h3 className="text-[14px] font-bold">{member.name}</h3><p className="mt-1 text-[10px] leading-4 text-black/45">{member.description}</p></div>{editing && <button type="button" onClick={() => onRemove(member.id)} className="ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-alfa-red" aria-label={`Удалить ${member.name}`}><Trash2 size={16} /></button>}</div><p className="mt-3 text-[11px] leading-4 text-black/60"><strong className="text-black">Зачем:</strong> {member.reason}</p><p className="mt-2 text-[11px] leading-4 text-black/60"><strong className="text-black">Первая задача:</strong> {member.firstTask}</p>{!editing && <button type="button" onClick={() => onOpen(member.id)} className="mt-auto inline-flex min-h-11 items-center gap-2 self-start text-[11px] font-bold text-future-blue">Открыть чат <ArrowRight size={14} /></button>}</article>)}</div>{editing && <div className="mt-4 rounded-[20px] border border-dashed border-black/20 p-4"><p className="text-[11px] font-bold">Добавить специалиста</p><div className="mt-3 flex flex-wrap gap-2">{available.map((agent) => <button key={agent.id} type="button" disabled={team.length >= 5} onClick={() => onAdd(agent.id)} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[10px] font-bold disabled:opacity-35"><Plus size={14} />{agent.name}</button>)}</div><p className="mt-3 text-[10px] text-black/40">В команде должно остаться от 3 до 5 агентов. Контекст: {passport.product || passport.direction || "проект уточняется"}.</p></div>}<div className="mt-5 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onConfirm} disabled={team.length < 3 || team.length > 5} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white disabled:opacity-35">Подтвердить команду <Check size={16} /></button>{editing ? <button type="button" onClick={onCancelEdit} className="min-h-12 rounded-[14px] bg-muted px-5 text-[12px] font-bold">Готово</button> : <button type="button" onClick={onEdit} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] bg-muted px-5 text-[12px] font-bold"><Pencil size={15} />Изменить состав</button>}</div></div>;
+  return <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_16px_46px_rgba(0,0,0,.08)] ring-1 ring-black/8"><div className="h-2 bg-future-purple" /><div className="p-4 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.09em] text-future-purple">Команда Альфа-Партнёра</p><h2 className="mt-1 text-[27px] font-black tracking-[-0.045em]">Ваша AI-команда готова</h2><p className="mt-2 max-w-[680px] text-[12px] font-medium leading-5 text-black/52">Специалисты подобраны под проект, текущую стадию и задачи. Состав можно изменить до подтверждения.</p></div><span className="self-start rounded-full bg-future-green px-3 py-2 text-[10px] font-bold">{team.length} {team.length === 5 ? "специалистов" : "специалиста"}</span></div><div className="mt-5 grid gap-3 md:grid-cols-2">{team.map((member) => <article key={member.id} className="flex min-h-[210px] flex-col rounded-[22px] bg-white p-4 ring-1 ring-black/10"><div className="flex items-start gap-3"><RoleAvatar id={member.id} /><div className="min-w-0"><h3 className="text-[15px] font-bold">{member.name}</h3><p className="mt-1 text-[10px] font-medium leading-4 text-black/42">{member.description}</p></div>{editing && <button type="button" onClick={() => onRemove(member.id)} className="ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-muted text-alfa-red" aria-label={`Удалить ${member.name}`}><Trash2 size={16} /></button>}</div><p className="mt-4 text-[11px] font-medium leading-5 text-black/56"><strong className="text-black">Зачем в команде:</strong> {member.reason}</p><p className="mt-2 border-t border-black/8 pt-3 text-[11px] font-medium leading-5 text-black/56"><strong className="text-black">Первая задача:</strong> {member.firstTask}</p>{!editing && <button type="button" onClick={() => onOpen(member.id)} className="mt-auto inline-flex min-h-11 items-center justify-between gap-2 rounded-[13px] bg-black px-4 text-[11px] font-bold text-white">Открыть чат <ArrowRight size={14} /></button>}</article>)}</div>{editing && <div className="mt-4 rounded-[20px] border border-dashed border-black/20 p-4"><p className="text-[11px] font-bold">Добавить специалиста</p><div className="mt-3 flex flex-wrap gap-2">{available.map((agent) => <button key={agent.id} type="button" disabled={team.length >= 5} onClick={() => onAdd(agent.id)} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[10px] font-bold disabled:opacity-35"><Plus size={14} />{agent.name}</button>)}</div><p className="mt-3 text-[10px] text-black/40">В команде должно остаться от 3 до 5 агентов. Контекст: {passport.product || passport.direction || "проект уточняется"}.</p></div>}<div className="mt-5 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onConfirm} disabled={team.length < 3 || team.length > 5} className="inline-flex min-h-13 flex-1 items-center justify-center gap-2 rounded-[15px] bg-alfa-red px-5 text-[12px] font-bold text-white disabled:opacity-35">Подтвердить команду <Check size={16} /></button>{editing ? <button type="button" onClick={onCancelEdit} className="min-h-13 rounded-[15px] bg-muted px-5 text-[12px] font-bold">Готово</button> : <button type="button" onClick={onEdit} className="inline-flex min-h-13 items-center justify-center gap-2 rounded-[15px] bg-muted px-5 text-[12px] font-bold"><Pencil size={15} />Изменить состав</button>}</div></div></div>;
 }
 
 function TeamPanel({ state, onClose, onOpen }: { state: PartnerState; onClose: () => void; onOpen: (id: string) => void }) {
   const dialogRef = useDialogFocus<HTMLElement>(onClose);
-  return <div className="fixed inset-0 z-[110] bg-black/55" role="dialog" aria-modal="true" aria-labelledby="team-panel-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><aside ref={dialogRef} className="ml-auto flex h-full w-full max-w-[460px] flex-col bg-white p-5 shadow-2xl sm:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-alfa-red">Альфа-партнёр</p><h2 id="team-panel-title" className="mt-1 text-[28px] font-bold tracking-[-0.04em]">Моя команда · {state.team.length}</h2></div><button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted" aria-label="Закрыть команду"><X size={18} /></button></div><div className="mt-6 min-h-0 flex-1 space-y-2 overflow-y-auto"><button type="button" onClick={() => onOpen("alpha-partner")} className={`flex w-full items-center gap-3 rounded-[20px] p-3 text-left ${state.activeAgentId === "alpha-partner" ? "bg-black text-white" : "bg-muted"}`}><RoleAvatar id="alpha-partner" /><span className="min-w-0 flex-1"><span className="block text-[13px] font-bold">Альфа-партнёр</span><span className={`mt-1 block text-[10px] ${state.activeAgentId === "alpha-partner" ? "text-white/55" : "text-black/45"}`}>Главный координатор · видит итоги команды</span></span><ChevronRight size={17} /></button>{state.team.map((member) => { const status = state.agentStatuses[member.id] ?? "idle"; return <article key={member.id} className={`rounded-[20px] p-3 ${state.activeAgentId === member.id ? "bg-future-blue text-white" : "bg-muted text-black"}`}><div className="flex items-start gap-3"><RoleAvatar id={member.id} /><div className="min-w-0 flex-1"><p className="text-[13px] font-bold">{member.name}</p><p className={`mt-1 flex items-center gap-2 text-[10px] font-bold ${state.activeAgentId === member.id ? "text-white/70" : "text-black/45"}`}><StatusDot status={status} />{STATUS_LABELS[status]}</p></div></div><p className={`mt-3 line-clamp-2 text-[10px] leading-4 ${state.activeAgentId === member.id ? "text-white/65" : "text-black/45"}`}>{state.agentTasks[member.id] ? `Последняя задача: ${state.agentTasks[member.id]}` : `Первая задача: ${member.firstTask}`}</p><button type="button" onClick={() => onOpen(member.id)} className={`mt-3 min-h-11 w-full rounded-full text-[10px] font-bold ${state.activeAgentId === member.id ? "bg-white text-black" : "bg-black text-white"}`}>Открыть чат</button></article>; })}</div><p className="mt-4 text-[10px] leading-4 text-black/40">Агенты используют общий паспорт бизнеса, но истории их чатов хранятся отдельно.</p></aside></div>;
+  return <div className="fixed inset-0 z-[110] bg-black/65 backdrop-blur-[3px]" role="dialog" aria-modal="true" aria-labelledby="team-panel-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><aside ref={dialogRef} className="ml-auto flex h-full w-full max-w-[520px] flex-col overflow-hidden bg-[#f3f3f4] shadow-[-28px_0_80px_rgba(0,0,0,.22)]"><div className="bg-alfa-red p-5 text-white sm:p-7"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/65">Команда вашего бизнеса</p><h2 id="team-panel-title" className="mt-2 text-[34px] font-black leading-none tracking-[-0.055em]">Моя команда · {state.team.length}</h2><p className="mt-3 max-w-[360px] text-[11px] font-medium leading-5 text-white/70">Один главный партнёр и специалисты с отдельными задачами и историями.</p></div><button type="button" onClick={onClose} className="grid h-12 w-12 shrink-0 place-items-center rounded-[15px] bg-white text-black" aria-label="Закрыть команду"><X size={19} /></button></div></div><div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-6"><button type="button" onClick={() => onOpen("alpha-partner")} className={`flex w-full items-center gap-3 rounded-[22px] p-4 text-left shadow-sm ${state.activeAgentId === "alpha-partner" ? "bg-black text-white" : "bg-white text-black ring-1 ring-black/8"}`}><RoleAvatar id="alpha-partner" size="lg" /><span className="min-w-0 flex-1"><span className="block text-[16px] font-bold">Альфа-Партнёр</span><span className={`mt-1 block text-[10px] font-medium leading-4 ${state.activeAgentId === "alpha-partner" ? "text-white/58" : "text-black/45"}`}>Главный координатор · объединяет результаты команды</span></span><ChevronRight size={19} /></button>{state.team.map((member) => { const status = state.agentStatuses[member.id] ?? "idle"; return <article key={member.id} className={`rounded-[22px] p-4 shadow-sm ${state.activeAgentId === member.id ? "bg-future-blue text-white" : "bg-white text-black ring-1 ring-black/8"}`}><div className="flex items-start gap-3"><RoleAvatar id={member.id} /><div className="min-w-0 flex-1"><p className="text-[15px] font-bold">{member.name}</p><p className={`mt-1 flex items-center gap-2 text-[10px] font-bold ${state.activeAgentId === member.id ? "text-white/72" : "text-black/45"}`}><StatusDot status={status} />{STATUS_LABELS[status]}</p></div></div><p className={`mt-4 line-clamp-2 border-t pt-3 text-[10px] font-medium leading-4 ${state.activeAgentId === member.id ? "border-white/18 text-white/68" : "border-black/8 text-black/48"}`}>{state.agentTasks[member.id] ? `Последняя задача: ${state.agentTasks[member.id]}` : `Первая задача: ${member.firstTask}`}</p><button type="button" onClick={() => onOpen(member.id)} className={`mt-4 flex min-h-11 w-full items-center justify-between rounded-[13px] px-4 text-[10px] font-bold ${state.activeAgentId === member.id ? "bg-white text-black" : "bg-black text-white"}`}>Открыть чат <ArrowRight size={15} /></button></article>; })}</div><p className="bg-white px-5 py-4 text-[9px] font-medium leading-4 text-black/42 sm:px-7">Все агенты используют общий паспорт бизнеса, но истории их чатов хранятся отдельно.</p></aside></div>;
 }
 
 function ConfirmModal({ title, text, confirmLabel, onConfirm, onClose }: { title: string; text: string; confirmLabel: string; onConfirm: () => void; onClose: () => void }) {
@@ -1033,5 +1152,5 @@ function ConfirmModal({ title, text, confirmLabel, onConfirm, onClose }: { title
 
 function PaymentModal({ onClose }: { onClose: () => void }) {
   const dialogRef = useDialogFocus<HTMLDivElement>(onClose);
-  return <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="payment-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div ref={dialogRef} className="max-h-[90dvh] w-full max-w-[520px] overflow-y-auto rounded-[28px] bg-white p-6 text-black sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-alfa-red">Финансовая задача подтверждена</p><h2 id="payment-title" className="mt-2 text-[28px] font-bold tracking-[-0.04em]">Переход в Альфа-Бизнес</h2></div><button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted" aria-label="Закрыть"><X size={18} /></button></div><div className="mt-5 flex items-start gap-3 rounded-[20px] bg-future-green p-4"><CircleDollarSign size={22} className="shrink-0" /><p className="text-[12px] font-bold leading-5">Реальный заказ подтверждён → задача приёма оплаты появилась → платёжный инструмент разблокирован.</p></div><p className="mt-5 text-[13px] leading-6 text-black/55">В рабочей версии здесь откроется защищённый сценарий создания платёжной ссылки. Прототип не запрашивает банковские данные и не утверждает, что продукт уже подключён.</p><button type="button" onClick={onClose} className="mt-6 min-h-12 w-full rounded-[14px] bg-black text-[12px] font-bold text-white">Вернуться к Альфа-партнёру</button></div></div>;
+  return <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="payment-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div ref={dialogRef} className="max-h-[90dvh] w-full max-w-[520px] overflow-y-auto rounded-[28px] bg-white p-6 text-black sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-alfa-red">Финансовая задача подтверждена</p><h2 id="payment-title" className="mt-2 text-[28px] font-bold tracking-[-0.04em]">Переход в Альфа-Бизнес</h2></div><button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted" aria-label="Закрыть"><X size={18} /></button></div><div className="mt-5 flex items-start gap-3 rounded-[20px] bg-future-green p-4"><CircleDollarSign size={22} className="shrink-0" /><p className="text-[12px] font-bold leading-5">Реальный заказ подтверждён → задача приёма оплаты появилась → платёжный инструмент разблокирован.</p></div><p className="mt-5 text-[13px] leading-6 text-black/55">В рабочей версии здесь откроется защищённый сценарий создания платёжной ссылки. Прототип не запрашивает банковские данные и не утверждает, что продукт уже подключён.</p><button type="button" onClick={onClose} className="mt-6 min-h-12 w-full rounded-[14px] bg-black text-[12px] font-bold text-white">Вернуться к Альфа-Партнёру</button></div></div>;
 }
