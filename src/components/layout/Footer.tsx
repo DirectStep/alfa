@@ -18,7 +18,7 @@ export function Footer({ homeHref = "#top", sectionHrefPrefix = "" }: { homeHref
         </p>
         <div className="mt-12 flex flex-col gap-9 border-t border-white/20 pt-8 laptop:mt-16 laptop:flex-row laptop:items-center laptop:justify-between">
           <a href={homeHref} className="flex items-center" aria-label="Альфа-Будущее и Альфа-Дело, в начало страницы">
-            <Image src={assetPath("/assets/brand/alfa-future-x-delo-lime.png")} alt="Альфа-Будущее × Альфа-Дело" width={1280} height={427} className="h-14 w-auto" />
+            <Image src={assetPath("/assets/brand/alfa-future-x-delo-final.png")} alt="Альфа-Будущее × Альфа-Дело" width={1280} height={427} className="h-14 w-auto" />
           </a>
           <nav className="flex flex-wrap gap-x-6 gap-y-3" aria-label="Навигация в подвале">
             {footerLinks.map((link) => <a key={link.label} href={`${sectionHrefPrefix}${link.href}`} className="text-[14px] text-white/60 transition-colors hover:text-future-green">{link.label}</a>)}
