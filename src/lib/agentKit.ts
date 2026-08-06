@@ -5,6 +5,7 @@ export type AgentKitAnswers = {
   situation?: string;
   product?: string;
   audience?: string;
+  stage?: string;
   prototype?: string;
   budget?: string;
   goal?: string;
@@ -55,13 +56,33 @@ function answerOrPending(value?: string) {
   return normalized;
 }
 
+function latinFilePart(value: string) {
+  const alphabet: Record<string, string> = {
+    а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "y",
+    к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f",
+    х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+  };
+  return value.toLowerCase()
+    .split("")
+    .map((character) => alphabet[character] ?? character)
+    .join("")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "") || "Project";
+}
+
 export function getAgentKitProfile(answers: AgentKitAnswers): AgentKitProfile {
+  const projectContext = `${answers.situation ?? ""} ${answers.product ?? ""}`.toLowerCase();
+  const projectName = /украшен|кольц|сер[её]г|браслет/.test(projectContext)
+    ? "Бренд украшений"
+    : /одеж|худи|свитшот|футбол|капсул/.test(projectContext)
+      ? "Бренд одежды"
+      : answerOrPending(answers.product);
   return {
-    projectName: "Бренд одежды",
+    projectName,
     product: answerOrPending(answers.product),
     audience: answerOrPending(answers.audience),
     readiness: answerOrPending(answers.prototype),
-    stage: "Проверка идеи",
+    stage: answerOrPending(answers.stage || (answers.situation ? "Проверка идеи" : undefined)),
     budget: answerOrPending(answers.budget),
     goal: answerOrPending(answers.goal),
   };
@@ -447,7 +468,9 @@ export async function buildAgentKit(
 
   const projectPart = profile.projectName === "Бренд одежды"
     ? "Brand_Odezhdy"
-    : profile.projectName.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "Project";
+    : profile.projectName === "Бренд украшений"
+      ? "Brand_Ukrasheniy"
+      : latinFilePart(profile.projectName);
   const archiveBuffer = new Uint8Array(archive.byteLength);
   archiveBuffer.set(archive);
 

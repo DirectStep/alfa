@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { AiAgentPrototype } from "@/components/ai-agent/AiAgentPrototype";
+import { AlphaPartnerPrototype } from "@/components/ai-agent/AlphaPartnerPrototype";
 import { AiAgentHowItWorks } from "@/components/ai-agent/AiAgentHowItWorks";
 import { assetPath } from "@/lib/assetPath";
 
 export const metadata: Metadata = {
-  title: "AI-агент — Альфа-Дело",
-  description: "Интерактивный прототип AI-навигатора для первого шага молодого предпринимателя.",
+  title: "Альфа-партнёр — AI-команда для бизнеса",
+  description: "Альфа-партнёр изучает бизнес, подбирает AI-команду и помогает делегировать задачи профильным агентам.",
 };
 
 export default function AiAgentPage() {
@@ -15,7 +15,7 @@ export default function AiAgentPage() {
     <>
       <Header homeHref={assetPath("/")} ctaHref={assetPath("/")} ctaLabel="На главную" showNavigation={false} />
       <main>
-        <AiAgentPrototype />
+        <AlphaPartnerPrototype />
         <AiAgentHowItWorks />
       </main>
       <Footer homeHref={assetPath("/")} sectionHrefPrefix={assetPath("/")} />
