@@ -973,7 +973,6 @@ export function AlphaPartnerPrototype() {
             </div>
 
             <div className="relative overflow-hidden rounded-[28px] bg-white p-5 ring-1 ring-black/8 sm:p-6">
-              <div className="absolute right-0 top-0 h-24 w-3 bg-alfa-red" aria-hidden="true" />
               <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-alfa-red">Паспорт бизнеса</p>
               <h2 className="mt-1 text-[22px] font-bold tracking-[-0.035em]">Контекст всегда с командой</h2>
               <p className="mt-2 max-w-[470px] text-[12px] leading-5 text-black/55">Агенты видят эти данные, поэтому не заставляют вас повторять вводную в каждом чате.</p>

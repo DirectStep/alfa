@@ -40,7 +40,12 @@ export function NumberedFeatureCard({
       )}
       <div className="min-w-0">
         <h3 className="text-[24px] font-bold leading-none tracking-[-0.025em]">{title}</h3>
-        <p className="mt-3 max-w-[560px] text-[15px] leading-5 opacity-70">{text}</p>
+        <p className={prominentNumber
+          ? "mt-4 max-w-[600px] text-[15px] leading-6 opacity-85 sm:text-[16px]"
+          : "mt-3 max-w-[560px] text-[15px] leading-5 opacity-70"}
+        >
+          {text}
+        </p>
       </div>
     </li>
   );
