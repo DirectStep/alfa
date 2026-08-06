@@ -26,7 +26,7 @@ export function Header({
     <header className="relative z-50 bg-alfa-red text-white">
       <Container className="flex h-[76px] items-center justify-between laptop:h-[84px]">
         <a href={homeHref} className="flex shrink-0 items-center" aria-label="Альфа-Будущее и Альфа-Дело, в начало страницы">
-          <Image src={assetPath("/assets/brand/alfa-future-x-delo.png")} alt="Альфа-Будущее × Альфа-Дело" width={1280} height={427} priority unoptimized sizes="(min-width: 1280px) 216px, 192px" className="h-16 w-auto laptop:h-[72px]" />
+          <Image src={assetPath("/assets/brand/alfa-future-x-delo-lime.png")} alt="Альфа-Будущее × Альфа-Дело" width={1280} height={427} priority unoptimized sizes="(min-width: 1280px) 216px, 192px" className="h-16 w-auto laptop:h-[72px]" />
         </a>
 
         {showNavigation && <nav className="hidden items-center gap-7 laptop:flex" aria-label="Основная навигация">
