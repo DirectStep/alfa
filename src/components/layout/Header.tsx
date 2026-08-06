@@ -16,7 +16,7 @@ type HeaderProps = {
 
 export function Header({
   homeHref = "#top",
-  ctaHref = "https://directstep.github.io/concept/",
+  ctaHref = assetPath("/ai-agent"),
   ctaLabel = "Собрать маршрут",
   showNavigation = true,
 }: HeaderProps = {}) {

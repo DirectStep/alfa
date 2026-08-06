@@ -1,5 +1,6 @@
 import { ArrowDownRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { assetPath } from "@/lib/assetPath";
 import { HeroArtwork } from "./HeroArtwork";
 
 const tickerItems = [
@@ -28,8 +29,8 @@ export function HeroSection() {
               Выбери задачу, получи понятный маршрут и переходи от идеи к первым продажам вместе с Альфой.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="#scenario" className="inline-flex h-13 items-center justify-center rounded-[14px] bg-future-green px-6 text-[14px] font-bold text-black transition-transform hover:-translate-y-0.5">Собрать свой маршрут</a>
-              <a href="#how-it-works" className="inline-flex h-13 items-center justify-center gap-2 rounded-[14px] border border-white/50 px-6 text-[14px] font-bold text-white transition-colors hover:bg-white hover:text-black">Как это работает <ArrowDownRight size={18} /></a>
+              <a href={assetPath("/ai-agent")} className="inline-flex h-13 items-center justify-center rounded-[14px] bg-future-green px-6 text-[14px] font-bold text-black transition-transform hover:-translate-y-0.5">Собрать свой маршрут</a>
+              <a href={assetPath("/ai-agent")} className="inline-flex h-13 items-center justify-center gap-2 rounded-[14px] border border-white/50 px-6 text-[14px] font-bold text-white transition-colors hover:bg-white hover:text-black">Как это работает <ArrowDownRight size={18} /></a>
             </div>
           </div>
           <HeroArtwork />

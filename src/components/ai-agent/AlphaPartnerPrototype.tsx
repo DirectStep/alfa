@@ -841,7 +841,7 @@ export function AlphaPartnerPrototype() {
               </div>
               <div className="absolute -left-8 top-8 z-20 rounded-[18px] bg-white px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,.14)]">
                 <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-black/35">Главный координатор</p>
-                <p className="mt-1 text-[14px] font-bold">Альфа-Партнёр</p>
+                <p className="mt-1 text-[14px] font-bold text-alfa-red">Альфа-Партнёр</p>
               </div>
               <div className="absolute -bottom-5 right-5 z-20 flex gap-2">
                 {HERO_ROLES.map((agentId) => {

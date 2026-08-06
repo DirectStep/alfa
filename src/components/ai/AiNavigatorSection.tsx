@@ -32,7 +32,7 @@ export function AiNavigatorSection() {
               <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/65">Пример рекомендации</p>
               <h3 className="mt-4 text-[32px] font-bold leading-[1] tracking-[-0.03em] sm:text-[42px]">Проверьте спрос до разработки продукта</h3>
               <p className="mt-5 max-w-[440px] text-[16px] leading-6 text-white/75">Получите сценарий интервью, критерии проверки гипотезы и понятный результат шага — обновлённый паспорт проекта.</p>
-              <a href={assetPath("/ai-agent/")} className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-[14px] font-bold text-black transition-transform hover:-translate-y-0.5">
+              <a href={assetPath("/ai-agent")} className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-[14px] font-bold text-black transition-transform hover:-translate-y-0.5">
                 Попробовать AI-агента <ArrowUpRight size={17} />
               </a>
             </div>
