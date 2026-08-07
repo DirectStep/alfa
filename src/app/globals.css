@@ -249,3 +249,7 @@ html {
     scroll-behavior: auto !important;
   }
 }
+
+[aria-labelledby="team-panel-title"] button {
+  font-size: 0.75rem;
+}

@@ -97,6 +97,20 @@ const LEGACY_START_MESSAGE = "Расскажите, с чем вы пришли.
 const PREVIOUS_START_MESSAGE = "Привет! Я ваш Альфа-Партнёр. Помогу развивать действующий бизнес или запустить новый: разберусь в ситуации, соберу AI-команду и предложу следующий шаг. Если появится конкретная финансовая задача, подскажу подходящий продукт Альфа-Банка. С чем вы пришли — у вас уже есть бизнес или пока идея?";
 const START_MESSAGE = "Привет! Я Альфа-Партнёр. Сначала разберусь, что у вас за бизнес и чего вы хотите добиться. Затем подберу 3–5 AI-специалистов и объясню, какую задачу дать каждому. У вас уже есть продажи или пока только идея?";
 const START_REPLIES = ["У меня уже есть бизнес", "У меня есть бизнес-идея", "Хочу запустить новый продукт"];
+const DEMO_SCENARIO_TITLE = "Запуск креативной студии";
+const DEMO_PASSPORT: BusinessPassport = {
+  projectType: "Бизнес-идея",
+  direction: "Креативные индустрии",
+  product: "Студия брендинга и контента",
+  audience: "Небольшие локальные бренды и молодые проекты",
+  stage: "Подготовка к запуску",
+  prepared: "Есть портфолио двух основателей и три тестовых кейса",
+  goal: "Получить первые три платных проекта",
+  problems: "Непонятно, как упаковать предложение и стабильно находить клиентов",
+  resources: "Два основателя, навыки дизайна и контента, готовое портфолио",
+  budget: "До 80 000 ₽ на первый месяц",
+  delegationTasks: "Проверить спрос, упаковать предложение и посчитать экономику запуска",
+};
 const PROCESS_STEPS = ["Расскажите о бизнесе", "Получите AI-команду", "Делегируйте задачи", "Соберите результат"];
 const TEAM_VISUALS: Record<string, string> = {
   marketer: "/assets/ai/target.png",
@@ -374,7 +388,7 @@ function RoleAvatar({ id, size = "md" }: { id: string; size?: "sm" | "md" | "lg"
   const dimensions = size === "lg" ? "h-16 w-16" : size === "sm" ? "h-10 w-10" : "h-12 w-12";
   if (id === "alpha-partner") {
     return (
-      <span className={`${dimensions} relative shrink-0 overflow-hidden rounded-[16px] bg-future-blue`}>
+      <span className={`${dimensions} relative block shrink-0 overflow-hidden rounded-[16px] bg-future-blue`}>
         <Image src={assetPath("/assets/ai/alfa-agent.png")} alt="Аватар Альфа-Партнёра" fill sizes="64px" className="object-cover object-top" />
       </span>
     );
@@ -454,16 +468,30 @@ export function AlphaPartnerPrototype() {
   const [systemNotice, setSystemNotice] = useState("");
   const [lastFailedRequest, setLastFailedRequest] = useState<FailedRequest | null>(null);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [thinkingIndex, setThinkingIndex] = useState(0);
+  const [demoRunning, setDemoRunning] = useState(false);
+  const [demoFinished, setDemoFinished] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const howItWorksRef = useRef<HTMLButtonElement>(null);
   const requestSequence = useRef(0);
   const clearStorageAfterReset = useRef(false);
+  const demoRunId = useRef(0);
+  const demoTimers = useRef<number[]>([]);
 
   const activeIsPartner = state.activeAgentId === "alpha-partner";
   const activeDefinition = activeIsPartner ? null : getAgentDefinition(state.activeAgentId);
   const activeMember = state.team.find((member) => member.id === state.activeAgentId);
   const activeMessages = activeIsPartner ? state.partnerHistory : state.agentThreads[state.activeAgentId] ?? [];
+  const partnerAnswerCount = countUserMessages(state.partnerHistory);
+  const showPartnerWelcome = activeIsPartner && partnerAnswerCount === 0;
+  const setupComplete = state.phase !== "collecting" || state.teamConfirmed;
+  const setupStep = Math.min(5, partnerAnswerCount + 1);
+  const thinkingMessages = activeIsPartner
+    ? state.teamConfirmed
+      ? ["Думаю над следующим шагом…", "Собираю результаты команды…", "Выбираю подходящего специалиста…"]
+      : ["Думаю над ответом…", "Сверяю ответ с паспортом бизнеса…", "Выбираю, что уточнить дальше…"]
+    : ["Изучаю задачу…", "Сверяюсь с контекстом бизнеса…", "Готовлю полезный результат…"];
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -537,6 +565,27 @@ export function AlphaPartnerPrototype() {
   }, [activeMessages.length, state.phase, loading, state.paymentState]);
 
   useEffect(() => {
+    if (!loading) return;
+    const timer = window.setInterval(() => {
+      setThinkingIndex((current) => (current + 1) % thinkingMessages.length);
+    }, 900);
+    return () => window.clearInterval(timer);
+  }, [loading, state.activeAgentId, state.phase, state.teamConfirmed, thinkingMessages.length]);
+
+  useEffect(() => {
+    const textarea = inputRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 104)}px`;
+  }, [input]);
+
+  useEffect(() => () => {
+    demoRunId.current += 1;
+    demoTimers.current.forEach((timer) => window.clearTimeout(timer));
+    demoTimers.current = [];
+  }, []);
+
+  useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(""), 3200);
     return () => window.clearTimeout(timer);
@@ -556,7 +605,125 @@ export function AlphaPartnerPrototype() {
         ? 1
         : 0;
 
+  function clearDemoSequence() {
+    demoRunId.current += 1;
+    demoTimers.current.forEach((timer) => window.clearTimeout(timer));
+    demoTimers.current = [];
+  }
+
+  function stopDemoScenario() {
+    clearDemoSequence();
+    setDemoRunning(false);
+    setDemoFinished(true);
+    setLoading(false);
+    setToast("Демонстрация остановлена — можно продолжить вручную");
+  }
+
+  function startDemoScenario() {
+    clearDemoSequence();
+    requestSequence.current += 1;
+    const runId = demoRunId.current;
+    const demoTeam = buildFallbackTeam(DEMO_PASSPORT);
+    const statuses = Object.fromEntries(demoTeam.map((member) => [member.id, "idle"])) as Record<string, AgentStatus>;
+    const marketerResult = "Для первого теста не запускайте рекламу сразу. Соберите список из 15 локальных брендов, отправьте им короткое предложение с двумя пакетами услуг и предложите 20-минутный разбор бренда. Цель теста — получить минимум пять ответов и две встречи за семь дней.";
+    const summary = "Маркетолог предложил проверить спрос через 15 персональных обращений: цель — пять ответов и две встречи за семь дней.";
+
+    setDemoRunning(true);
+    setDemoFinished(false);
+    setThinkingIndex(0);
+    setLoading(true);
+    setInput("");
+    setInputError("");
+    setSystemNotice("");
+    setTeamPanelOpen(false);
+    setEditingTeam(false);
+    setAlfaBusinessConnected(false);
+    try {
+      window.localStorage.removeItem(ALFA_BUSINESS_STORAGE_KEY);
+    } catch {
+      // Демонстрация работает и без доступа к localStorage.
+    }
+    setState(createInitialState());
+
+    function schedule(delay: number, update: (current: PartnerState) => PartnerState, after?: () => void) {
+      const timer = window.setTimeout(() => {
+        if (demoRunId.current !== runId) return;
+        setState(update);
+        after?.();
+      }, delay);
+      demoTimers.current.push(timer);
+    }
+
+    schedule(900, (current) => ({
+      ...current,
+      passport: { ...current.passport, projectType: DEMO_PASSPORT.projectType, direction: DEMO_PASSPORT.direction, product: DEMO_PASSPORT.product },
+      partnerHistory: [...current.partnerHistory, makeMessage("user", "Хочу запустить небольшую креативную студию: делать брендинг и контент для молодых компаний.", "demo")],
+    }));
+    schedule(2700, (current) => ({ ...current, partnerHistory: [...current.partnerHistory, makeMessage("agent", "Понял: вы запускаете студию брендинга и контента. Кто должен стать вашим первым клиентом?", "demo")] }));
+    schedule(4500, (current) => ({
+      ...current,
+      passport: { ...current.passport, audience: DEMO_PASSPORT.audience },
+      partnerHistory: [...current.partnerHistory, makeMessage("user", "Небольшие локальные бренды и молодые проекты, которым нужна понятная упаковка.", "demo")],
+    }));
+    schedule(6300, (current) => ({ ...current, partnerHistory: [...current.partnerHistory, makeMessage("agent", "Хорошо. Что уже готово для запуска и какие ресурсы у вас есть?", "demo")] }));
+    schedule(8100, (current) => ({
+      ...current,
+      passport: { ...current.passport, stage: DEMO_PASSPORT.stage, prepared: DEMO_PASSPORT.prepared, resources: DEMO_PASSPORT.resources, budget: DEMO_PASSPORT.budget },
+      partnerHistory: [...current.partnerHistory, makeMessage("user", "Нас двое: дизайнер и контент-специалист. Есть портфолио и три тестовых кейса. На первый месяц готовы потратить до 80 000 ₽.", "demo")],
+    }));
+    schedule(9900, (current) => ({ ...current, partnerHistory: [...current.partnerHistory, makeMessage("agent", "Какой первый измеримый результат вы хотите получить?", "demo")] }));
+    schedule(11700, (current) => ({
+      ...current,
+      passport: { ...DEMO_PASSPORT },
+      partnerHistory: [...current.partnerHistory, makeMessage("user", "Найти первые три платных проекта и понять, как упаковать предложение и считать экономику.", "demo")],
+    }));
+    schedule(13500, (current) => ({
+      ...current,
+      phase: "context_ready",
+      team: demoTeam,
+      partnerHistory: [...current.partnerHistory, makeMessage("agent", "Контекст собран. Я вижу три главные задачи: проверить спрос, упаковать предложение и посчитать экономику запуска. Подбираю специалистов.", "demo")],
+    }));
+    schedule(15500, (current) => ({ ...current, phase: "team_review" }));
+    schedule(17500, (current) => ({
+      ...current,
+      phase: "active",
+      teamConfirmed: true,
+      agentStatuses: statuses,
+      partnerHistory: [...current.partnerHistory, makeMessage("agent", `Команда готова: ${demoTeam.map((member) => member.name.toLowerCase()).join(", ")}. Сейчас покажу, как поставить задачу одному специалисту.`, "demo")],
+    }));
+    schedule(19500, (current) => ({
+      ...current,
+      activeAgentId: "marketer",
+      agentThreads: { ...current.agentThreads, marketer: [makeMessage("agent", agentGreeting("marketer", DEMO_PASSPORT), "demo")] },
+      agentStatuses: { ...current.agentStatuses, marketer: "waiting" },
+    }));
+    schedule(21300, (current) => ({
+      ...current,
+      agentThreads: { ...current.agentThreads, marketer: [...(current.agentThreads.marketer ?? []), makeMessage("user", "Подготовь простой способ проверить спрос на услуги студии без большого рекламного бюджета.", "demo")] },
+      agentStatuses: { ...current.agentStatuses, marketer: "working" },
+      agentTasks: { ...current.agentTasks, marketer: "Проверить спрос на услуги креативной студии" },
+    }));
+    schedule(23300, (current) => ({
+      ...current,
+      agentThreads: { ...current.agentThreads, marketer: [...(current.agentThreads.marketer ?? []), makeMessage("agent", marketerResult, "demo")] },
+      agentStatuses: { ...current.agentStatuses, marketer: "ready" },
+    }));
+    schedule(25500, (current) => ({
+      ...current,
+      activeAgentId: "alpha-partner",
+      teamSummaries: [...current.teamSummaries, { agentId: "marketer", agentName: "Маркетолог", summary }],
+      partnerHistory: [...current.partnerHistory, makeMessage("agent", "Маркетолог подготовил проверку спроса, а я сохранил результат в общем контексте. Следующий шаг — провести 15 персональных обращений и вернуться с числом ответов и встреч. Дальше я обновлю маршрут.", "demo")],
+    }), () => {
+      setDemoRunning(false);
+      setDemoFinished(true);
+      setLoading(false);
+      setToast("Демонстрационный сценарий завершён");
+      demoTimers.current = [];
+    });
+  }
+
   function openAgent(agentId: string) {
+    if (loading) return;
     if (agentId === "alpha-partner") {
       setState((current) => ({ ...current, activeAgentId: "alpha-partner" }));
       setTeamPanelOpen(false);
@@ -691,6 +858,7 @@ export function AlphaPartnerPrototype() {
     const sequence = ++requestSequence.current;
     setInput("");
     setInputError("");
+    setThinkingIndex(0);
     setLoading(true);
     if (!retryRequest) {
       setState((current) => {
@@ -874,6 +1042,7 @@ export function AlphaPartnerPrototype() {
   }
 
   function restart() {
+    clearDemoSequence();
     requestSequence.current += 1;
     clearStorageAfterReset.current = true;
     try {
@@ -882,6 +1051,8 @@ export function AlphaPartnerPrototype() {
       // Состояние интерфейса всё равно сбрасывается, если localStorage недоступен.
     }
     setLoading(false);
+    setDemoRunning(false);
+    setDemoFinished(false);
     setState(createInitialState());
     setAlfaBusinessConnected(false);
     setDismissedRecommendations([]);
@@ -959,12 +1130,17 @@ export function AlphaPartnerPrototype() {
             from { transform: translate3d(0, 0, 0); }
             to { transform: translate3d(-50%, 0, 0); }
           }
+          @keyframes alpha-thinking-dot {
+            0%, 70%, 100% { opacity: .28; transform: translateY(0); }
+            35% { opacity: 1; transform: translateY(-3px); }
+          }
           .alpha-partner-marquee-track {
             animation: alpha-partner-marquee 30s linear infinite;
             will-change: transform;
           }
+          .alpha-thinking-dot { animation: alpha-thinking-dot 1.1s ease-in-out infinite; }
           @media (prefers-reduced-motion: reduce) {
-            .alpha-partner-marquee-track { animation: none; }
+            .alpha-partner-marquee-track, .alpha-thinking-dot { animation: none; }
           }
         `}</style>
       </div>
@@ -982,20 +1158,56 @@ export function AlphaPartnerPrototype() {
                     <p className="whitespace-nowrap text-[12px] font-bold sm:text-[16px]">{activeIsPartner ? <>AI-агент <span className="text-alfa-red">Альфа-Партнёр</span></> : activeMember?.name || activeDefinition?.name}</p>
                     <ConnectionBadge status={connectionStatus} />
                   </div>
-                  <p className="truncate text-[10px] text-black/45 sm:text-[12px]">{activeIsPartner ? "Изучает бизнес, собирает команду и координирует задачи" : activeDefinition?.description}</p>
+                  <p className="truncate text-[10px] text-black/45 sm:text-[12px]">{activeIsPartner ? "Изучает бизнес и координирует команду" : activeDefinition?.description}</p>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                {!activeIsPartner && <button type="button" onClick={() => openAgent("alpha-partner")} className="hidden min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[11px] font-bold hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue sm:inline-flex"><ArrowLeft size={14} />К Альфа-Партнёру</button>}
-                {!activeIsPartner && <button type="button" onClick={() => openAgent("alpha-partner")} className="grid h-11 w-11 place-items-center rounded-full bg-muted text-black sm:hidden" aria-label="Вернуться к Альфа-Партнёру"><ArrowLeft size={17} /></button>}
-                {state.teamConfirmed && <button type="button" onClick={() => setTeamPanelOpen(true)} aria-label={`Моя команда · ${state.team.length}`} className="inline-flex min-h-11 items-center gap-2 rounded-[14px] bg-black px-3.5 text-[11px] font-bold text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue"><Users size={15} /><span className="hidden sm:inline">Моя команда · </span>{state.team.length}</button>}
+                {!activeIsPartner && <button type="button" disabled={loading} onClick={() => openAgent("alpha-partner")} className="hidden min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[11px] font-bold hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue sm:inline-flex"><ArrowLeft size={14} />К Альфа-Партнёру</button>}
+                {!activeIsPartner && <button type="button" disabled={loading} onClick={() => openAgent("alpha-partner")} className="grid h-11 w-11 place-items-center rounded-full bg-muted text-black disabled:cursor-not-allowed disabled:opacity-40 sm:hidden" aria-label="Вернуться к Альфа-Партнёру"><ArrowLeft size={17} /></button>}
+                {state.teamConfirmed && <button type="button" disabled={loading} onClick={() => setTeamPanelOpen(true)} aria-label={`Моя команда · ${state.team.length}`} className="inline-flex min-h-11 items-center gap-2 rounded-[14px] bg-black px-3.5 text-[11px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue"><Users size={15} /><span className="hidden sm:inline">Моя команда · </span>{state.team.length}</button>}
                 <button type="button" onClick={() => setResetOpen(true)} title="Начать заново" className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-muted px-3 text-[11px] font-bold text-black/55 hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue" aria-label="Начать заново"><RotateCcw size={17} /><span className="hidden laptop:inline">Начать заново</span></button>
               </div>
             </header>
 
+            {(activeIsPartner || demoRunning) && (
+              <div className="shrink-0 border-t border-black/5 px-4 py-2.5 sm:px-6">
+                <div className="mx-auto flex max-w-[920px] flex-wrap items-center gap-2.5 sm:flex-nowrap sm:gap-3">
+                  <p className="min-w-0 flex-1 truncate text-[10px] font-bold text-black/55 sm:flex-none sm:text-[11px]">
+                    {demoRunning && !activeIsPartner ? `Демонстрация · ${activeMember?.name || "специалист"}` : state.teamConfirmed ? "Контекст собран · команда готова" : setupComplete ? "Контекст собран · подбираю команду" : `Знакомство с бизнесом · шаг ${setupStep} из 5`}
+                  </p>
+                  <div className="order-3 h-1.5 basis-full overflow-hidden rounded-full bg-black/8 sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto" aria-hidden="true">
+                    <div className="h-full rounded-full bg-alfa-red transition-[width] duration-300" style={{ width: `${setupComplete ? 100 : setupStep * 20}%` }} />
+                  </div>
+                  {demoRunning && <button type="button" onClick={stopDemoScenario} className="min-h-9 shrink-0 rounded-[11px] bg-black px-3 text-[10px] font-bold text-white">Остановить демо</button>}
+                  {!demoRunning && demoFinished && <button type="button" onClick={startDemoScenario} className="min-h-9 shrink-0 rounded-[11px] bg-alfa-red px-3 text-[10px] font-bold text-white">Повторить демо</button>}
+                </div>
+              </div>
+            )}
+
+            {state.teamConfirmed && (
+              <div className="flex shrink-0 gap-2 overflow-x-auto border-t border-black/5 px-4 py-2 laptop:hidden" aria-label="Быстрое переключение между агентами">
+                {["alpha-partner", ...state.team.map((member) => member.id)].map((agentId) => {
+                  const agent = agentId === "alpha-partner" ? null : state.team.find((member) => member.id === agentId);
+                  const label = agentId === "alpha-partner" ? "Альфа-Партнёр" : agent?.name || "Специалист";
+                  const active = state.activeAgentId === agentId;
+                  return (
+                    <button key={agentId} type="button" disabled={loading} onClick={() => openAgent(agentId)} aria-label={`Открыть чат: ${label}`} aria-current={active ? "page" : undefined} className={`relative shrink-0 rounded-[14px] p-1 transition-transform disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red ${active ? "bg-alfa-red" : "bg-black/5"}`}>
+                      <RoleAvatar id={agentId} size="sm" />
+                      {agentId !== "alpha-partner" && <span className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white"><StatusDot status={state.agentStatuses[agentId] ?? "idle"} /></span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex min-h-0 flex-1">
+              <div className="flex min-w-0 flex-1 flex-col">
+
             <div ref={chatRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f5f5f5] px-4 py-5 sm:px-6 sm:py-6" aria-live="polite">
               <div className="mx-auto flex w-full max-w-[920px] flex-col gap-3">
-                {activeMessages.map((message) => (
+                {activeMessages.map((message, index) => activeIsPartner && index === 0 && message.role === "agent" && message.text === START_MESSAGE ? (
+                  <PartnerWelcomeCard key={message.id} showActions={showPartnerWelcome} onSelect={(reply) => void submitAnswer(reply)} onDemo={startDemoScenario} />
+                ) : (
                   <div key={message.id} className="space-y-2">
                     <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[90%] whitespace-pre-line rounded-[20px] px-4 py-3.5 text-[13px] font-normal leading-5 sm:max-w-[76%] sm:px-5 sm:py-4 sm:text-[14px] sm:leading-6 ${message.role === "user" ? "rounded-br-[6px] bg-black text-white" : "rounded-bl-[6px] bg-white text-black shadow-[0_4px_14px_rgba(0,0,0,.04)]"}`}>{message.text}</div>
@@ -1008,7 +1220,17 @@ export function AlphaPartnerPrototype() {
 
                 {systemNotice && <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] bg-black/[0.045] px-4 py-3 text-[11px] text-black/60" role="status"><span>{systemNotice}</span><button type="button" onClick={() => void retryConnection()} disabled={loading || connectionStatus === "checking"} className="min-h-9 rounded-full bg-white px-4 font-bold text-black ring-1 ring-black/10 disabled:opacity-45">Повторить подключение</button></div>}
 
-                {loading && <div className="flex justify-start"><div className="rounded-[20px] rounded-bl-[6px] bg-white px-5 py-3 text-[13px] text-black/55 ring-1 ring-black/6">{activeIsPartner ? "Альфа-Партнёр анализирует ответ…" : `${activeMember?.name || "Агент"} готовит результат…`}</div></div>}
+                {loading && (
+                  <div className="flex justify-start" role="status">
+                    <span className="sr-only">{activeIsPartner ? "Альфа-Партнёр готовит ответ" : `${activeMember?.name || "Агент"} готовит ответ`}</span>
+                    <div aria-hidden="true" className="flex items-center gap-3 rounded-[18px] rounded-bl-[6px] bg-white px-4 py-3 text-[12px] font-medium text-black/58 shadow-[0_4px_14px_rgba(0,0,0,.04)]">
+                      <span className="flex gap-1" aria-hidden="true">
+                        {[0, 1, 2].map((dot) => <span key={dot} className="alpha-thinking-dot h-1.5 w-1.5 rounded-full bg-alfa-red" style={{ animationDelay: `${dot * 140}ms` }} />)}
+                      </span>
+                      <span>{thinkingMessages[thinkingIndex]}</span>
+                    </div>
+                  </div>
+                )}
 
                 {activeIsPartner && state.phase === "context_ready" && !loading && (
                   <ContextCard passport={state.passport} onBuild={() => setState((current) => ({ ...current, phase: "team_review" }))} />
@@ -1036,7 +1258,7 @@ export function AlphaPartnerPrototype() {
                   <div className="ml-auto w-full max-w-[560px] rounded-[22px] bg-future-green p-4 text-black sm:p-5">
                     <p className="text-[10px] font-bold uppercase tracking-[0.08em]">Результат готов</p>
                     <p className="mt-2 text-[13px] leading-5">Передайте короткий итог главному партнёру — он учтёт его в общем маршруте.</p>
-                    <button type="button" onClick={transferResult} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-black px-5 text-[11px] font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">Передать результат Альфа-Партнёру <ArrowRight size={14} /></button>
+                    <button type="button" onClick={transferResult} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-black px-5 text-[12px] font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">Передать результат Альфа-Партнёру <ArrowRight size={14} /></button>
                   </div>
                 )}
 
@@ -1044,31 +1266,50 @@ export function AlphaPartnerPrototype() {
                   <div className="rounded-[20px] bg-black p-4 text-white sm:p-5">
                     <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-future-green">Точнее по фактическим данным</p>
                     <p className="mt-2 max-w-[680px] text-[12px] font-medium leading-5 text-white/72">Хотите подключить Альфа-Бизнес? Тогда я смогу учитывать операции бизнеса и давать рекомендации не только по сообщениям, но и по фактическим данным.</p>
-                    <button type="button" onClick={() => setAlfaBusinessOpen(true)} className="mt-3 min-h-11 rounded-full bg-future-green px-5 text-[11px] font-bold text-black">Подключить демо</button>
-                  </div>
-                )}
-
-                {!loading && activeIsPartner && countUserMessages(state.partnerHistory) === 0 && (
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                    {START_REPLIES.map((reply, index) => <button key={reply} type="button" onClick={() => void submitAnswer(reply)} className={`min-h-12 rounded-[14px] px-4 text-left text-[11px] font-bold transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue ${index === 0 ? "bg-alfa-red text-white" : "bg-white text-black ring-1 ring-black/10"}`}>{reply}</button>)}
+                    <button type="button" onClick={() => setAlfaBusinessOpen(true)} className="mt-3 min-h-11 rounded-full bg-future-green px-5 text-[12px] font-bold text-black">Подключить демо</button>
                   </div>
                 )}
 
                 {!loading && !activeIsPartner && activeDefinition && activeMessages.filter((message) => message.role === "user").length === 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {activeDefinition.quickTasks.map((task) => <button key={task} type="button" onClick={() => void submitAnswer(task)} className="min-h-11 rounded-full bg-white px-4 text-[11px] font-bold ring-1 ring-black/10 hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue">{task}</button>)}
+                    {activeDefinition.quickTasks.map((task) => <button key={task} type="button" onClick={() => void submitAnswer(task)} className="min-h-11 rounded-full bg-white px-4 text-[12px] font-bold ring-1 ring-black/10 hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue">{task}</button>)}
                   </div>
                 )}
               </div>
             </div>
 
             <form onSubmit={onSubmit} className="border-t border-black/5 bg-white p-3 sm:p-4">
-              <div className="mx-auto flex max-w-[920px] items-end gap-2 rounded-[16px] bg-[#ededee] p-2 transition-shadow focus-within:bg-white focus-within:shadow-[0_0_0_2px_var(--future-blue)]">
-                <textarea ref={inputRef} value={input} disabled={loading} onChange={(event) => { setInput(event.target.value); if (inputError) setInputError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitAnswer(input); } }} rows={1} maxLength={MAX_INPUT_LENGTH + 1} placeholder={activeIsPartner ? "Напишите сообщение…" : "Опишите задачу…"} className="h-11 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 text-[13px] font-medium leading-5 outline-none placeholder:text-black/48 disabled:opacity-60" aria-label={activeIsPartner ? "Сообщение Альфа-Партнёру" : `Задача для ${activeDefinition?.name || "специалиста"}`} aria-describedby={inputError ? "alpha-input-error" : undefined} />
-                <button type="submit" disabled={loading} className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-alfa-red text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red" aria-label="Отправить сообщение"><Send size={17} /></button>
+              <div className="mx-auto max-w-[920px]">
+                <div className="flex items-end gap-2 rounded-[17px] bg-white p-2 shadow-[0_4px_20px_rgba(0,0,0,.06)] ring-1 ring-black/12 transition-shadow focus-within:shadow-[0_0_0_2px_var(--future-blue)] focus-within:ring-transparent">
+                  <textarea ref={inputRef} value={input} disabled={loading} onChange={(event) => { setInput(event.target.value); if (inputError) setInputError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitAnswer(input); } }} rows={1} maxLength={MAX_INPUT_LENGTH + 1} placeholder={activeIsPartner ? "Расскажите о бизнесе или задаче…" : "Опишите задачу специалисту…"} className="min-h-12 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 text-[13px] font-medium leading-6 outline-none placeholder:text-black/42 disabled:opacity-60" aria-label={activeIsPartner ? "Сообщение Альфа-Партнёру" : `Задача для ${activeDefinition?.name || "специалиста"}`} aria-describedby={inputError ? "alpha-input-error" : "alpha-input-hint"} />
+                  <button type="submit" disabled={loading} className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] bg-alfa-red text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red" aria-label="Отправить сообщение"><Send size={17} /></button>
+                </div>
+                <div className="mt-2 flex min-h-4 items-center justify-between px-2 text-[9px]">
+                  <p id={inputError ? "alpha-input-error" : "alpha-input-hint"} className={inputError ? "font-bold text-alfa-red" : "font-medium text-black/38"}>{inputError || "Можно отвечать своими словами"}</p>
+                  {input.length >= 600 && <span className="ml-auto text-black/35">{input.length}/{MAX_INPUT_LENGTH}</span>}
+                </div>
               </div>
-              <div className="mx-auto mt-1.5 flex max-w-[920px] justify-between px-2 text-[9px]"><p id="alpha-input-error" className="font-bold text-alfa-red">{inputError}</p><span className="ml-auto text-black/30">{input.length}/{MAX_INPUT_LENGTH}</span></div>
             </form>
+              </div>
+
+              {state.teamConfirmed && (
+                <aside className="hidden w-[84px] shrink-0 flex-col items-center gap-3 border-l border-black/6 bg-white px-3 py-4 laptop:flex" aria-label="Быстрое переключение между агентами">
+                  {["alpha-partner", ...state.team.map((member) => member.id)].map((agentId) => {
+                    const agent = agentId === "alpha-partner" ? null : state.team.find((member) => member.id === agentId);
+                    const label = agentId === "alpha-partner" ? "Альфа-Партнёр" : agent?.name || "Специалист";
+                    const active = state.activeAgentId === agentId;
+                    return (
+                      <button key={agentId} type="button" disabled={loading} onClick={() => openAgent(agentId)} title={label} aria-label={`Открыть чат: ${label}`} aria-current={active ? "page" : undefined} className={`group relative rounded-[17px] p-1.5 transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red ${active ? "bg-alfa-red" : "bg-black/5"}`}>
+                        <RoleAvatar id={agentId} size={agentId === "alpha-partner" ? "md" : "sm"} />
+                        {agentId !== "alpha-partner" && <span className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white"><StatusDot status={state.agentStatuses[agentId] ?? "idle"} /></span>}
+                        <span className="pointer-events-none absolute right-[calc(100%+10px)] top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-[9px] bg-black px-2.5 py-2 text-[9px] font-bold text-white shadow-lg group-hover:block group-focus-visible:block">{label}</span>
+                      </button>
+                    );
+                  })}
+                  <button type="button" disabled={loading} onClick={() => setTeamPanelOpen(true)} title="Открыть всю команду" className="mt-auto grid h-11 w-11 place-items-center rounded-[14px] bg-black text-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red" aria-label="Открыть всю команду"><Users size={17} /></button>
+                </aside>
+              )}
+            </div>
           </div>
 
           <div className="mt-8 grid items-stretch gap-4 laptop:grid-cols-[1.1fr_.9fr]">
@@ -1112,7 +1353,7 @@ export function AlphaPartnerPrototype() {
        </Container>
       </div>
 
-      {state.teamConfirmed && <div className="bg-white"><Container className="ai-agent-container"><div className="mx-auto max-w-[1180px]"><TeamShowcase team={state.team} statuses={state.agentStatuses} onOpen={openAgent} onOpenAll={() => setTeamPanelOpen(true)} /></div></Container></div>}
+      {state.teamConfirmed && <div className="bg-white"><Container className="ai-agent-container"><div className="mx-auto max-w-[1180px]"><TeamShowcase team={state.team} statuses={state.agentStatuses} busy={loading} onOpen={openAgent} onOpenAll={() => setTeamPanelOpen(true)} /></div></Container></div>}
       <AlfaBusinessSection connected={alfaBusinessConnected} onConnect={() => setAlfaBusinessOpen(true)} onExplain={() => setBusinessDataInfoOpen(true)} />
 
       {teamPanelOpen && <><TeamPanel state={state} onClose={() => setTeamPanelOpen(false)} onOpen={openAgent} onOpenPlans={openPlans} /><TeamKitDownloadDock onDownload={downloadTeamKit} /></>}
@@ -1126,7 +1367,34 @@ export function AlphaPartnerPrototype() {
   );
 }
 
-function TeamShowcase({ team, statuses, onOpen, onOpenAll }: { team: ChatTeamMember[]; statuses: Record<string, AgentStatus>; onOpen: (id: string) => void; onOpenAll: () => void }) {
+function PartnerWelcomeCard({ showActions, onSelect, onDemo }: { showActions: boolean; onSelect: (reply: string) => void; onDemo: () => void }) {
+  return (
+    <section className="relative overflow-hidden rounded-[22px] bg-future-blue px-5 py-6 text-white sm:px-7 sm:py-7" aria-labelledby="partner-welcome-title">
+      <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-future-purple" aria-hidden="true" />
+      <div className="absolute -bottom-20 right-24 h-40 w-40 rounded-full bg-future-green" aria-hidden="true" />
+      <div className="relative z-10 max-w-[700px]">
+        <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-future-green">Начнём с вашего бизнеса</p>
+        <h2 id="partner-welcome-title" className="mt-2 text-[25px] font-bold leading-[1.03] tracking-[-0.035em] sm:text-[32px]">Привет, я ваш Альфа-Партнёр</h2>
+        <p className="mt-3 max-w-[620px] text-[12px] font-normal leading-5 text-white/78 sm:text-[13px] sm:leading-6">Расскажите, с чем вы пришли. Я уточню только недостающие детали, соберу паспорт бизнеса и подберу 3–5 специалистов под ваши задачи.</p>
+        {showActions && (
+          <div className="mt-5 space-y-2.5">
+            <button type="button" onClick={onDemo} className="flex min-h-14 w-full items-center justify-between gap-4 rounded-[13px] bg-alfa-red px-4 py-3 text-left text-[12px] font-bold leading-4 text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-5 sm:text-[13px]">
+              <span><span className="block text-[8px] uppercase tracking-[0.1em] text-white/60 sm:text-[9px]">Посмотреть всё автоматически</span><span className="mt-1 block">Демонстрационный сценарий: {DEMO_SCENARIO_TITLE}</span></span>
+              <span className="shrink-0 text-[10px] text-white/65">≈ 26 сек →</span>
+            </button>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {START_REPLIES.map((reply, index) => (
+                <button key={reply} type="button" onClick={() => onSelect(reply)} className={`min-h-12 rounded-[13px] px-4 text-left text-[12px] font-bold leading-4 transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${index === 0 ? "bg-future-green text-black" : "bg-white text-black"}`}>{reply}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function TeamShowcase({ team, statuses, busy, onOpen, onOpenAll }: { team: ChatTeamMember[]; statuses: Record<string, AgentStatus>; busy: boolean; onOpen: (id: string) => void; onOpenAll: () => void }) {
   return (
     <section className="py-20 sm:py-24 laptop:py-28" aria-labelledby="team-showcase-title">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -1135,7 +1403,7 @@ function TeamShowcase({ team, statuses, onOpen, onOpenAll }: { team: ChatTeamMem
           <h2 id="team-showcase-title" className="future-section-title mt-3 max-w-[760px]">Специалисты уже знают ваш бизнес</h2>
           <p className="future-body-large mt-5 max-w-[720px] text-black/55">Откройте нужного агента, поставьте задачу и передайте готовый результат Альфа-Партнёру.</p>
         </div>
-        <button type="button" onClick={onOpenAll} className="future-button inline-flex shrink-0 items-center justify-center gap-3 self-start bg-black text-white transition-transform hover:-translate-y-0.5 sm:self-auto">Открыть мою команду <Users size={17} /></button>
+        <button type="button" disabled={busy} onClick={onOpenAll} className="future-button inline-flex shrink-0 items-center justify-center gap-3 self-start bg-black text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 sm:self-auto">Открыть мою команду <Users size={17} /></button>
       </div>
 
       <div className="team-showcase-grid mt-10 grid gap-4 sm:grid-cols-2 xl:!grid-cols-3">
@@ -1158,7 +1426,7 @@ function TeamShowcase({ team, statuses, onOpen, onOpenAll }: { team: ChatTeamMem
               <p className="relative z-10 mt-3 max-w-[290px] text-[12px] font-normal leading-5 opacity-75">{member.reason}</p>
               <p className="relative z-10 mt-4 max-w-[260px] text-[11px] font-bold leading-5"><span className="mb-1 block text-[9px] uppercase tracking-[.08em] opacity-50">Первая задача</span>{member.firstTask}</p>
               {visual && <Image src={assetPath(visual)} alt="" width={220} height={220} className="pointer-events-none absolute -bottom-5 -right-5 h-[190px] w-[190px] object-contain opacity-95 sm:h-[210px] sm:w-[210px]" aria-hidden="true" />}
-              <button type="button" onClick={() => onOpen(member.id)} className="relative z-10 mt-auto inline-flex min-h-11 w-fit min-w-[145px] items-center justify-between gap-3 rounded-[12px] bg-white px-4 text-[11px] font-bold text-black transition-transform hover:-translate-y-0.5">Открыть чат <ArrowRight size={15} /></button>
+              <button type="button" disabled={busy} onClick={() => onOpen(member.id)} className="relative z-10 mt-auto inline-flex min-h-11 w-fit min-w-[145px] items-center justify-between gap-3 rounded-[12px] bg-white px-4 text-[12px] font-bold text-black transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45">Открыть чат <ArrowRight size={15} /></button>
             </article>
           );
         })}
@@ -1183,8 +1451,8 @@ function BankRecommendationCard({ recommendation, onConnect, onDismiss }: { reco
         <p className="mt-4 text-[12px] font-medium leading-5 text-white/78">{recommendation.reason}</p>
         <p className="mt-2 text-[11px] leading-5 text-white/65">{recommendation.message}</p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <button type="button" onClick={onConnect} className="min-h-11 rounded-[13px] bg-white px-5 text-[11px] font-bold text-black">{recommendation.cta || product.cta}</button>
-          <button type="button" onClick={onDismiss} className="min-h-11 rounded-[13px] bg-black/16 px-5 text-[11px] font-bold text-white">Не сейчас</button>
+          <button type="button" onClick={onConnect} className="min-h-11 rounded-[13px] bg-white px-5 text-[12px] font-bold text-black">{recommendation.cta || product.cta}</button>
+          <button type="button" onClick={onDismiss} className="min-h-11 rounded-[13px] bg-black/16 px-5 text-[12px] font-bold text-white">Не сейчас</button>
         </div>
       </div>
     </article>
@@ -1361,7 +1629,7 @@ function ContextCard({ passport, onBuild }: { passport: BusinessPassport; onBuil
 
 function TeamProposal({ team, editing, passport, onEdit, onCancelEdit, onRemove, onAdd, onConfirm, onOpen }: { team: ChatTeamMember[]; editing: boolean; passport: BusinessPassport; onEdit: () => void; onCancelEdit: () => void; onRemove: (id: string) => void; onAdd: (id: string) => void; onConfirm: () => void; onOpen: (id: string) => void }) {
   const available = AGENT_REGISTRY.filter((agent) => !team.some((member) => member.id === agent.id));
-  return <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_16px_46px_rgba(0,0,0,.08)] ring-1 ring-black/8"><div className="h-2 bg-future-purple" /><div className="p-4 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.09em] text-future-purple">Команда Альфа-Партнёра</p><h2 className="mt-1 text-[27px] font-black tracking-[-0.045em]">Ваша AI-команда готова</h2><p className="mt-2 max-w-[680px] text-[12px] font-medium leading-5 text-black/52">Специалисты подобраны под проект, текущую стадию и задачи. Состав можно изменить до подтверждения.</p></div><span className="self-start rounded-full bg-future-green px-3 py-2 text-[10px] font-bold">{team.length} {team.length === 5 ? "специалистов" : "специалиста"}</span></div><div className="mt-5 grid gap-3 md:grid-cols-2">{team.map((member) => <article key={member.id} className="flex min-h-[210px] flex-col rounded-[22px] bg-white p-4 ring-1 ring-black/10"><div className="flex items-start gap-3"><RoleAvatar id={member.id} /><div className="min-w-0"><h3 className="text-[15px] font-bold">{member.name}</h3><p className="mt-1 text-[10px] font-medium leading-4 text-black/42">{member.description}</p></div>{editing && <button type="button" onClick={() => onRemove(member.id)} className="ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-muted text-alfa-red" aria-label={`Удалить ${member.name}`}><Trash2 size={16} /></button>}</div><p className="mt-4 text-[11px] font-medium leading-5 text-black/56"><strong className="text-black">Зачем в команде:</strong> {member.reason}</p><p className="mt-2 border-t border-black/8 pt-3 text-[11px] font-medium leading-5 text-black/56"><strong className="text-black">Первая задача:</strong> {member.firstTask}</p>{!editing && <button type="button" onClick={() => onOpen(member.id)} className="mt-auto inline-flex min-h-11 items-center justify-between gap-2 rounded-[13px] bg-black px-4 text-[11px] font-bold text-white">Открыть чат <ArrowRight size={14} /></button>}</article>)}</div>{editing && <div className="mt-4 rounded-[20px] border border-dashed border-black/20 p-4"><p className="text-[11px] font-bold">Добавить специалиста</p><div className="mt-3 flex flex-wrap gap-2">{available.map((agent) => <button key={agent.id} type="button" disabled={team.length >= 5} onClick={() => onAdd(agent.id)} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[10px] font-bold disabled:opacity-35"><Plus size={14} />{agent.name}</button>)}</div><p className="mt-3 text-[10px] text-black/40">В команде должно остаться от 3 до 5 агентов. Контекст: {passport.product || passport.direction || "проект уточняется"}.</p></div>}<div className="mt-5 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onConfirm} disabled={team.length < 3 || team.length > 5} className="inline-flex min-h-13 flex-1 items-center justify-center gap-2 rounded-[15px] bg-alfa-red px-5 text-[12px] font-bold text-white disabled:opacity-35">Подтвердить команду <Check size={16} /></button>{editing ? <button type="button" onClick={onCancelEdit} className="min-h-13 rounded-[15px] bg-muted px-5 text-[12px] font-bold">Готово</button> : <button type="button" onClick={onEdit} className="inline-flex min-h-13 items-center justify-center gap-2 rounded-[15px] bg-muted px-5 text-[12px] font-bold"><Pencil size={15} />Изменить состав</button>}</div></div></div>;
+  return <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_16px_46px_rgba(0,0,0,.08)] ring-1 ring-black/8"><div className="h-2 bg-future-purple" /><div className="p-4 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.09em] text-future-purple">Команда Альфа-Партнёра</p><h2 className="mt-1 text-[27px] font-black tracking-[-0.045em]">Ваша AI-команда готова</h2><p className="mt-2 max-w-[680px] text-[12px] font-medium leading-5 text-black/52">Специалисты подобраны под проект, текущую стадию и задачи. Состав можно изменить до подтверждения.</p></div><span className="self-start rounded-full bg-future-green px-3 py-2 text-[10px] font-bold">{team.length} {team.length === 5 ? "специалистов" : "специалиста"}</span></div><div className="mt-5 grid gap-3 md:grid-cols-2">{team.map((member) => <article key={member.id} className="flex min-h-[210px] flex-col rounded-[22px] bg-white p-4 ring-1 ring-black/10"><div className="flex items-start gap-3"><RoleAvatar id={member.id} /><div className="min-w-0"><h3 className="text-[15px] font-bold">{member.name}</h3><p className="mt-1 text-[10px] font-medium leading-4 text-black/42">{member.description}</p></div>{editing && <button type="button" onClick={() => onRemove(member.id)} className="ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-muted text-alfa-red" aria-label={`Удалить ${member.name}`}><Trash2 size={16} /></button>}</div><p className="mt-4 text-[11px] font-medium leading-5 text-black/56"><strong className="text-black">Зачем в команде:</strong> {member.reason}</p><p className="mt-2 border-t border-black/8 pt-3 text-[11px] font-medium leading-5 text-black/56"><strong className="text-black">Первая задача:</strong> {member.firstTask}</p>{!editing && <button type="button" onClick={() => onOpen(member.id)} className="mt-auto inline-flex min-h-11 items-center justify-between gap-2 rounded-[13px] bg-black px-4 text-[12px] font-bold text-white">Открыть чат <ArrowRight size={14} /></button>}</article>)}</div>{editing && <div className="mt-4 rounded-[20px] border border-dashed border-black/20 p-4"><p className="text-[11px] font-bold">Добавить специалиста</p><div className="mt-3 flex flex-wrap gap-2">{available.map((agent) => <button key={agent.id} type="button" disabled={team.length >= 5} onClick={() => onAdd(agent.id)} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[12px] font-bold disabled:opacity-35"><Plus size={14} />{agent.name}</button>)}</div><p className="mt-3 text-[10px] text-black/40">В команде должно остаться от 3 до 5 агентов. Контекст: {passport.product || passport.direction || "проект уточняется"}.</p></div>}<div className="mt-5 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onConfirm} disabled={team.length < 3 || team.length > 5} className="inline-flex min-h-13 flex-1 items-center justify-center gap-2 rounded-[15px] bg-alfa-red px-5 text-[12px] font-bold text-white disabled:opacity-35">Подтвердить команду <Check size={16} /></button>{editing ? <button type="button" onClick={onCancelEdit} className="min-h-13 rounded-[15px] bg-muted px-5 text-[12px] font-bold">Готово</button> : <button type="button" onClick={onEdit} className="inline-flex min-h-13 items-center justify-center gap-2 rounded-[15px] bg-muted px-5 text-[12px] font-bold"><Pencil size={15} />Изменить состав</button>}</div></div></div>;
 }
 
 function TeamPanel({ state, onClose, onOpen, onOpenPlans }: { state: PartnerState; onClose: () => void; onOpen: (id: string) => void; onOpenPlans: () => void }) {
