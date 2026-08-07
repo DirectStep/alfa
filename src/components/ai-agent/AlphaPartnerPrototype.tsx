@@ -36,7 +36,7 @@ import {
 } from "@/lib/alphaPartner";
 import { assetPath } from "@/lib/assetPath";
 import { appendAgentMessage, ensureAgentThread } from "@/lib/agentThreads.mjs";
-import { sanitizePartnerState, serializePartnerState } from "@/lib/partnerStorage.mjs";
+import { clearPartnerStorage, sanitizePartnerState, serializePartnerState } from "@/lib/partnerStorage.mjs";
 import {
   checkChatHealth,
   sendChatMessage,
@@ -89,12 +89,13 @@ const FALLBACK_NOTICE = "Сейчас работаем в демо-режиме.
 const PAYMENT_CONFIRMATION = "Правильно понял, у вас уже есть реальный заказ или предзаказ и нужно принять оплату?";
 const FIRST_PAYMENT_RECOMMENDATION: BankRecommendation = {
   productId: "internet_acquiring",
-  reason: "У вас появился реальный заказ или предзаказ — теперь нужен способ принять дистанционную оплату.",
-  message: "Для онлайн-продажи подойдёт интернет-эквайринг Альфа-Бизнес.",
+  reason: "У вас появился заказ или предзаказ, и покупателю нужно удобно заплатить онлайн.",
+  message: "Для этого подойдёт интернет-эквайринг Альфа-Бизнеса — приём оплаты банковской картой через интернет.",
   cta: "Посмотреть вариант",
 };
 const LEGACY_START_MESSAGE = "Расскажите, с чем вы пришли. У вас уже есть работающий бизнес или пока только идея?";
-const START_MESSAGE = "Привет! Я ваш Альфа-Партнёр. Помогу развивать действующий бизнес или запустить новый: разберусь в ситуации, соберу AI-команду и предложу следующий шаг. Если появится конкретная финансовая задача, подскажу подходящий продукт Альфа-Банка. С чем вы пришли — у вас уже есть бизнес или пока идея?";
+const PREVIOUS_START_MESSAGE = "Привет! Я ваш Альфа-Партнёр. Помогу развивать действующий бизнес или запустить новый: разберусь в ситуации, соберу AI-команду и предложу следующий шаг. Если появится конкретная финансовая задача, подскажу подходящий продукт Альфа-Банка. С чем вы пришли — у вас уже есть бизнес или пока идея?";
+const START_MESSAGE = "Привет! Я Альфа-Партнёр. Сначала разберусь, что у вас за бизнес и чего вы хотите добиться. Затем подберу 3–5 AI-специалистов и объясню, какую задачу дать каждому. У вас уже есть продажи или пока только идея?";
 const START_REPLIES = ["У меня уже есть бизнес", "У меня есть бизнес-идея", "Хочу запустить новый продукт"];
 const PROCESS_STEPS = ["Расскажите о бизнесе", "Получите AI-команду", "Делегируйте задачи", "Соберите результат"];
 const TEAM_VISUALS: Record<string, string> = {
@@ -242,7 +243,7 @@ function normalizeMessagesBranding(messages: Message[]) {
 
 function normalizeInitialGreeting(messages: Message[]) {
   const normalized = normalizeMessagesBranding(messages);
-  if (normalized[0]?.role !== "agent" || normalized[0].text !== LEGACY_START_MESSAGE) return normalized;
+  if (normalized[0]?.role !== "agent" || ![LEGACY_START_MESSAGE, PREVIOUS_START_MESSAGE].includes(normalized[0].text)) return normalized;
   return [{ ...normalized[0], text: START_MESSAGE }, ...normalized.slice(1)];
 }
 
@@ -251,9 +252,9 @@ function withoutTrailingDemo(messages: Message[], replaceDemo: boolean) {
   return messages.slice(0, -1);
 }
 
-function hasFallbackContext(passport: BusinessPassport, answerCount: number) {
+function hasFallbackContext(passport: BusinessPassport) {
   const core = [passport.projectType, passport.direction || passport.product, passport.audience, passport.stage, passport.goal];
-  return answerCount >= 5 || (core.filter(Boolean).length >= 4 && Boolean(passport.problems || passport.delegationTasks || passport.prepared));
+  return core.every(Boolean) && Boolean(passport.problems || passport.delegationTasks || passport.prepared || passport.resources);
 }
 
 function hasOrderSignal(value: string) {
@@ -274,9 +275,12 @@ function extractFallbackPassport(value: string, current: BusinessPassport): Busi
   const text = value.trim();
   const normalized = text.toLowerCase().replace(/ё/g, "е");
   const next = { ...current };
+  const projectTypeWasKnown = Boolean(next.projectType);
+  const productWasKnown = Boolean(next.product || next.direction);
   if (!next.projectType) {
     if (/иде[яю]|хочу запустить|новый продукт/.test(normalized)) next.projectType = "Бизнес-идея";
-    else if (/у меня (уже )?есть бизнес|работающ/.test(normalized)) next.projectType = "Существующий бизнес";
+    else if (/у меня (уже )?есть бизнес|работающ|уже прода|есть продаж|есть клиент/.test(normalized)) next.projectType = "Существующий бизнес";
+    else if (/готовим(?:ся)? к запуску|готовлю(?:сь)? к запуску/.test(normalized)) next.projectType = "Бизнес-идея";
   }
   if (!next.product) {
     if (/худи/.test(normalized)) next.product = "Худи";
@@ -284,7 +288,8 @@ function extractFallbackPassport(value: string, current: BusinessPassport): Busi
     else if (/футболк/.test(normalized)) next.product = "Футболки";
     else {
       const product = text.match(/(?:продаю|запустить|продукт|услуга)\s+([^,.!?]{2,80})/i)?.[1];
-      if (product) next.product = product.trim();
+      const shortProductAnswer = projectTypeWasKnown && /^[а-яa-z0-9ё -]{3,80}$/i.test(text) && !/^(не знаю|пока не знаю|ничего)$/i.test(text) ? text : "";
+      if (product || shortProductAnswer) next.product = (product || shortProductAnswer).trim();
     }
   }
   if (!next.direction) {
@@ -295,37 +300,47 @@ function extractFallbackPassport(value: string, current: BusinessPassport): Busi
     if (/студент/.test(normalized)) next.audience = "Студенты";
     else {
       const audience = text.match(/для\s+([^,.!?]{2,70})/i)?.[1];
-      if (audience && !/теста|запуска|проверки|производства/i.test(audience)) next.audience = audience.trim();
+      const shortAudienceAnswer = projectTypeWasKnown && productWasKnown && /^[а-яa-z0-9ё ,–—-]{3,120}$/i.test(text) && !/^(не знаю|пока не знаю|все|для всех)$/i.test(text) ? text : "";
+      if ((audience || shortAudienceAnswer) && !/теста|запуска|проверки|производства/i.test(audience || "")) next.audience = (audience || shortAudienceAnswer).trim();
     }
   }
   if (!next.prepared) {
     if (/эскиз/.test(normalized)) next.prepared = "Есть эскизы";
     else if (/образец|прототип/.test(normalized)) next.prepared = "Есть образец";
+    else if (/нашл[иаи]? поставщик|есть поставщик/.test(normalized)) next.prepared = "Найден поставщик";
+    else if (/посмотрел[иаи]? похож|изучил[иаи]? похож/.test(normalized)) next.prepared = "Изучены похожие проекты";
+    else if (/уже прода|начал[иаи]? прода|есть продаж/.test(normalized)) next.prepared = "Начались продажи";
     else if (/только идея/.test(normalized)) next.prepared = "Пока только идея";
   }
   if (!next.resources && next.prepared) next.resources = next.prepared;
   if (!next.stage) {
     if (/заказ|предзаказ/.test(normalized)) next.stage = "Есть первые заказы";
-    else if (/работающ|уже прода|есть клиенты/.test(normalized)) next.stage = "Работающий бизнес";
+    else if (/работающ|уже прода|начал[иаи]? прода|есть продаж|есть клиенты/.test(normalized)) next.stage = "Работающий бизнес";
+    else if (/нашл[иаи]? поставщик|посмотрел[иаи]? похож|изучил[иаи]? похож/.test(normalized)) next.stage = "Подготовка к запуску";
     else if (/иде[яю]|запустить/.test(normalized)) next.stage = "Идея";
   }
   if (!next.goal) {
     if (/проверить спрос/.test(normalized)) next.goal = "Проверить спрос";
+    else if (/понять[^.!?]{0,35}(будут ли )?покуп|будут ли покуп/.test(normalized)) next.goal = "Понять, будут ли покупать";
     else if (/первые заявки|первых заявок/.test(normalized)) next.goal = "Получить первые заявки";
+    else if (/посчитать (расход|затрат|бюджет)/.test(normalized)) next.goal = "Посчитать расходы";
+    else if (/подготовить запуск|подготовиться к запуску/.test(normalized)) next.goal = "Подготовить запуск";
     else if (/запустить/.test(normalized)) next.goal = "Запустить продукт";
+    else if (/^(пока )?не знаю|не понимаю,? что (выбрать|делать)/.test(normalized)) next.goal = "Определить следующий шаг";
   }
   if (!next.budget) {
-    if (/бюджет[^.!?]{0,30}(не определ|не знаю|пока нет)/.test(normalized)) next.budget = "Пока не определён";
+    if (/бюджет[^.!?]{0,30}(не определ|не знаю|пока нет)|^(пока )?не знаю$/.test(normalized)) next.budget = "Пока не определён";
     else {
       const budget = text.match(/\d[\d\s]*(?:₽|руб(?:лей|ля|ль)?)/i)?.[0];
       if (budget) next.budget = budget.trim();
     }
   }
   if (!next.problems) {
-    const problem = text.match(/(?:проблема|не понимаю|мешает|сложно)\s*[:—-]?\s*([^.!?]{3,160})/i)?.[1];
-    if (problem) next.problems = problem.trim();
+    const problem = text.match(/(?:проблема|не понимаю|непонятно|мешает|сложно)\s*[,：:—-]?\s*([^.!?]{3,160})/i)?.[1];
+    if (problem || /^непонятно/i.test(text)) next.problems = (problem || text).trim();
   }
   if (!next.delegationTasks && /делегир|поручить|помоги|нужна помощь/i.test(normalized)) next.delegationTasks = text;
+  if (!next.delegationTasks && next.goal) next.delegationTasks = next.goal;
   return next;
 }
 
@@ -443,6 +458,7 @@ export function AlphaPartnerPrototype() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const howItWorksRef = useRef<HTMLButtonElement>(null);
   const requestSequence = useRef(0);
+  const clearStorageAfterReset = useRef(false);
 
   const activeIsPartner = state.activeAgentId === "alpha-partner";
   const activeDefinition = activeIsPartner ? null : getAgentDefinition(state.activeAgentId);
@@ -488,6 +504,11 @@ export function AlphaPartnerPrototype() {
   useEffect(() => {
     if (!hydrated) return;
     try {
+      if (clearStorageAfterReset.current) {
+        clearStorageAfterReset.current = false;
+        clearPartnerStorage(window.localStorage, [STORAGE_KEY, LEGACY_STORAGE_KEY, ALFA_BUSINESS_STORAGE_KEY]);
+        return;
+      }
       window.localStorage.setItem(STORAGE_KEY, serializePartnerState(state));
     } catch {
       // Прототип продолжает работать, даже если браузер запретил локальное хранилище.
@@ -566,7 +587,7 @@ export function AlphaPartnerPrototype() {
         phase: "active",
         activeAgentId: "alpha-partner",
         agentStatuses: statuses,
-        partnerHistory: [...current.partnerHistory, makeMessage("agent", "Команда подтверждена. Откройте «Моя команда», выберите специалиста и делегируйте первую задачу. Там же можно скачать презентационный ZIP-комплект команды для компьютера или телефона. Внутри сохранены роли и контекст проекта, но локальные агенты пока не запускаются и не управляют устройством.")],
+        partnerHistory: [...current.partnerHistory, makeMessage("agent", "Команда готова. Откройте «Моя команда», выберите специалиста и напишите, что ему нужно сделать. Там же можно скачать ZIP-комплект для компьютера или телефона. В архиве будут описание бизнеса, состав команды и задачи каждого специалиста. Это демонстрационный комплект: агенты из архива пока не запускаются и не управляют устройством.")],
       };
     });
     setEditingTeam(false);
@@ -588,7 +609,7 @@ export function AlphaPartnerPrototype() {
           passport,
           paymentState: "unlocked",
           activeAgentId: "alpha-partner",
-          partnerHistory: [...current.partnerHistory, makeMessage("agent", "Заказ подтверждён. Теперь доступен следующий шаг — приём первой оплаты.", "demo", FIRST_PAYMENT_RECOMMENDATION)],
+          partnerHistory: [...current.partnerHistory, makeMessage("agent", "Понял: покупатель уже готов сделать заказ, поэтому теперь нужно выбрать удобный способ принять оплату. Показываю подходящий вариант Альфа-Бизнеса.", "demo", FIRST_PAYMENT_RECOMMENDATION)],
         };
       }
       if (current.paymentState === "confirming" && isNegativePaymentAnswer(answer)) {
@@ -622,19 +643,18 @@ export function AlphaPartnerPrototype() {
           phase: "active",
           partnerHistory: [
             ...current.partnerHistory,
-            makeMessage("agent", "Контекст и результаты команды сохранены. Выберите специалиста в «Моей команде» или уточните, какую задачу хотите решить следующей.", "demo"),
+            makeMessage("agent", "Я сохранил информацию о бизнесе и ответы специалистов. Теперь откройте «Моя команда» и выберите, кому поручить следующую задачу. Если не знаете кого выбрать — просто напишите, что нужно сделать.", "demo"),
           ],
         };
       }
-      const answerCount = countUserMessages(current.partnerHistory);
-      if (hasFallbackContext(passport, answerCount)) {
+      if (hasFallbackContext(passport)) {
         const team = apiTeam.length >= 3 ? apiTeam : buildFallbackTeam(passport);
         return {
           ...current,
           passport,
           team,
           phase: "context_ready",
-          partnerHistory: [...current.partnerHistory, makeMessage("agent", "Контекст бизнеса собран. Я подготовил команду специалистов под вашу цель и текущие задачи.", "demo")],
+          partnerHistory: [...current.partnerHistory, makeMessage("agent", "Готово: я понял, что у вас за бизнес, чего вы хотите добиться и что уже сделано. Теперь покажу специалистов, которые помогут решить ближайшие задачи.", "demo")],
         };
       }
       return {
@@ -717,7 +737,7 @@ export function AlphaPartnerPrototype() {
             ...current.agentThreads,
             [currentAgentId]: [
               ...withoutTrailingDemo(current.agentThreads[currentAgentId] ?? [], Boolean(retryRequest)),
-              makeMessage("agent", "Передаю финансовую потребность Альфа-Партнёру для подтверждения."),
+              makeMessage("agent", "Похоже, вам уже нужно принимать оплату. Переключаю на Альфа-Партнёра: он сначала уточнит, есть ли реальный заказ или предзаказ."),
             ],
           };
           return {
@@ -772,20 +792,23 @@ export function AlphaPartnerPrototype() {
 
   async function retryConnection() {
     if (loading) return;
+    const sequenceAtStart = requestSequence.current;
+    const failedRequestAtStart = lastFailedRequest;
     setConnectionStatus("checking");
     const health = await checkChatHealth();
+    if (sequenceAtStart !== requestSequence.current) return;
     if (health.status !== "ok" || !health.configured || !health.oauthAvailable || !health.modelAvailable) {
       setConnectionStatus("error");
       setSystemNotice("Подключение пока не восстановлено. Можно продолжить в демо-режиме.");
       return;
     }
-    if (!lastFailedRequest) {
+    if (!failedRequestAtStart) {
       setConnectionStatus("connected");
       setSystemNotice("");
       setToast("AI снова подключён");
       return;
     }
-    await submitAnswer(lastFailedRequest.value, lastFailedRequest);
+    await submitAnswer(failedRequestAtStart.value, failedRequestAtStart);
   }
 
   function onSubmit(event: FormEvent) {
@@ -805,7 +828,7 @@ export function AlphaPartnerPrototype() {
         ...current,
         pendingSummaries,
         teamSummaries: [...current.teamSummaries.filter((item) => item.agentId !== id), { agentId: id, agentName: agent.name, summary }],
-        partnerHistory: [...current.partnerHistory, makeMessage("agent", `Получил результат от специалиста «${agent.name}». Учту его, когда будем выбирать следующий шаг.`)],
+        partnerHistory: [...current.partnerHistory, makeMessage("agent", `Я получил результат от специалиста «${agent.name}» и сохранил главное. Когда вы спросите, что делать дальше, я учту этот результат вместе с остальной информацией о бизнесе.`)],
       };
     });
     setToast("Результат передан Альфа-Партнёру");
@@ -852,10 +875,26 @@ export function AlphaPartnerPrototype() {
 
   function restart() {
     requestSequence.current += 1;
+    clearStorageAfterReset.current = true;
+    try {
+      clearPartnerStorage(window.localStorage, [STORAGE_KEY, LEGACY_STORAGE_KEY, ALFA_BUSINESS_STORAGE_KEY]);
+    } catch {
+      // Состояние интерфейса всё равно сбрасывается, если localStorage недоступен.
+    }
     setLoading(false);
     setState(createInitialState());
+    setAlfaBusinessConnected(false);
+    setDismissedRecommendations([]);
+    setProductModal(null);
+    setProductDetailsOpen(false);
+    setAlfaBusinessOpen(false);
+    setBusinessDataInfoOpen(false);
+    setEditingTeam(false);
     setResetOpen(false);
     setTeamPanelOpen(false);
+    setLastFailedRequest(null);
+    setSystemNotice("");
+    setToast("");
     setInput("");
     setInputError("");
   }
@@ -1078,7 +1117,7 @@ export function AlphaPartnerPrototype() {
 
       {teamPanelOpen && <><TeamPanel state={state} onClose={() => setTeamPanelOpen(false)} onOpen={openAgent} onOpenPlans={openPlans} /><TeamKitDownloadDock onDownload={downloadTeamKit} /></>}
       {onboardingOpen && <OnboardingCarousel onClose={closeOnboarding} onStart={closeOnboarding} />}
-      {resetOpen && <ConfirmModal title="Начать заново?" text="Текущая команда, отдельные диалоги и переданные результаты будут удалены из браузера." confirmLabel="Начать заново" onConfirm={restart} onClose={() => setResetOpen(false)} />}
+      {resetOpen && <ConfirmModal title="Начать заново?" text="Будут удалены чат, паспорт бизнеса, команда, результаты специалистов и подключённые демо-данные Альфа-Бизнеса. Онбординг повторно не появится." confirmLabel="Удалить всё и начать" onConfirm={restart} onClose={() => setResetOpen(false)} />}
       {productModal && <ProductConnectModal recommendation={productModal} detailsOpen={productDetailsOpen} onShowDetails={() => setProductDetailsOpen(true)} onClose={() => { setProductModal(null); setProductDetailsOpen(false); }} />}
       {alfaBusinessOpen && <AlfaBusinessModal onConfirm={connectAlfaBusiness} onClose={() => setAlfaBusinessOpen(false)} />}
       {businessDataInfoOpen && <BusinessDataInfoModal onClose={() => setBusinessDataInfoOpen(false)} />}

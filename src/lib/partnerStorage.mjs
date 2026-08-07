@@ -15,3 +15,7 @@ export function sanitizePartnerState(state) {
 export function serializePartnerState(state) {
   return JSON.stringify(sanitizePartnerState(state));
 }
+
+export function clearPartnerStorage(storage, keys) {
+  for (const key of keys) storage.removeItem(key);
+}

@@ -304,15 +304,19 @@ function extractKnownFacts(message, currentPassport) {
   const text = cleanText(message, 1600);
   const normalized = text.toLowerCase().replace(/ё/g, "е");
   const passport = { ...sanitizePassport(currentPassport) };
+  const projectTypeWasKnown = Boolean(passport.projectType);
+  const productWasKnown = Boolean(passport.product || passport.direction);
 
   if (!passport.projectType) {
     if (/бизнес[-\s]?иде[яю]|иде[яю]|хочу запустить|планирую запустить/i.test(normalized)) passport.projectType = "Бизнес-идея";
-    else if (/у меня (уже )?есть (работающ|бизнес|магазин|компан)/i.test(normalized)) passport.projectType = "Существующий бизнес";
+    else if (/у меня (уже )?есть (работающ|бизнес|магазин|компан)|уже прода|есть продаж|есть клиент/i.test(normalized)) passport.projectType = "Существующий бизнес";
+    else if (/готовим(?:ся)? к запуску|готовлю(?:сь)? к запуску/i.test(normalized)) passport.projectType = "Бизнес-идея";
   }
   if (!passport.product) {
     const brandProduct = normalized.match(/бренд(?:а)?\s+([а-яa-z0-9-]+(?:\s+[а-яa-z0-9-]+){0,2}?)(?=\s+для(?:\s|$)|\s+но(?:\s|$)|[,.!?]|$)/i)?.[1];
     const knownProduct = normalized.match(/(худи|свитшот(?:ы|ов)?|футболк(?:а|и|ок)?|украшени(?:е|я|й)|браслет(?:ы|ов)?|сер[её]г(?:и|а)?|кольц(?:о|а)?)/i)?.[1];
-    passport.product = productValue(brandProduct || knownProduct || "");
+    const shortProductAnswer = projectTypeWasKnown && /^[а-яa-z0-9ё -]{3,80}$/i.test(text) && !/^(не знаю|пока не знаю|ничего)$/i.test(text) ? text : "";
+    passport.product = productValue(brandProduct || knownProduct || shortProductAnswer);
   }
   if (!passport.direction) {
     if (/бренд|худи|одежд|футбол|свитшот/i.test(normalized)) passport.direction = "Бренд одежды / e-commerce";
@@ -328,16 +332,20 @@ function extractKnownFacts(message, currentPassport) {
     else {
       const audience = normalized.match(/для\s+([^,.!?]{2,60})/i)?.[1];
       const isBusinessContext = /^(теста|запуска|проверки|производства|рекламы|продажи|проекта)(\s|$)/i.test(audience || "");
-      passport.audience = isBusinessContext ? "" : sentenceValue(audience || "");
+      const shortAudienceAnswer = projectTypeWasKnown && productWasKnown && /^[а-яa-z0-9ё ,–—-]{3,120}$/i.test(text) && !/^(не знаю|пока не знаю|все|для всех)$/i.test(text) ? text : "";
+      passport.audience = isBusinessContext ? "" : sentenceValue(audience || shortAudienceAnswer);
     }
   }
   if (!passport.prepared) {
     if (normalized.includes("готовый образец") || normalized.includes("есть образец")) passport.prepared = "Есть готовый образец";
     else if (normalized.includes("эскиз")) passport.prepared = "Есть эскизы";
+    else if (/нашл[иаи]? поставщик|есть поставщик/i.test(normalized)) passport.prepared = "Найден поставщик";
+    else if (/посмотрел[иаи]? похож|изучил[иаи]? похож/i.test(normalized)) passport.prepared = "Изучены похожие проекты";
+    else if (/уже прода|начал[иаи]? прода|есть продаж/i.test(normalized)) passport.prepared = "Начались продажи";
     else if (normalized.includes("пока только идея") || normalized.includes("есть идея")) passport.prepared = "Пока только идея";
   }
   if (!passport.budget) {
-    if (/бюджет[^.!?]{0,40}(не определ|пока нет|не знаю)/i.test(normalized)) passport.budget = "Пока не определён";
+    if (/бюджет[^.!?]{0,40}(не определ|пока нет|не знаю)|^(пока )?не знаю$/i.test(normalized)) passport.budget = "Пока не определён";
     else {
       const budget = text.match(/(?:бюджет[^\d]{0,20})?(\d[\d\s]*(?:[–—-]\s*\d[\d\s]*)?\s*(?:₽|руб(?:лей|ля|ль)?))/i)?.[1];
       passport.budget = sentenceValue(budget || "");
@@ -345,19 +353,24 @@ function extractKnownFacts(message, currentPassport) {
   }
   if (!passport.goal) {
     if (normalized.includes("проверить спрос")) passport.goal = "Проверить спрос";
+    else if (/понять[^.!?]{0,35}(будут ли )?покуп|будут ли покуп/i.test(normalized)) passport.goal = "Понять, будут ли покупать";
     else if (/не понимаю[^.!?]{0,50}кто[^.!?]{0,30}(покуп|будет)/i.test(normalized)) passport.goal = "Определить аудиторию";
     else if (normalized.includes("первые заявки") || normalized.includes("первых заявок")) passport.goal = "Получить первые заявки";
+    else if (/посчитать (расход|затрат|бюджет)/i.test(normalized)) passport.goal = "Посчитать расходы";
+    else if (/подготовить запуск|подготовиться к запуску/i.test(normalized)) passport.goal = "Подготовить запуск";
     else if (/запуст|новый продукт/i.test(normalized)) passport.goal = "Запустить продукт";
+    else if (/^(пока )?не знаю|не понимаю,? что (выбрать|делать)/i.test(normalized)) passport.goal = "Определить следующий шаг";
   }
   if (!passport.stage) {
     if (/реальн[^.!?]{0,20}(заказ|предзаказ)|есть[^.!?]{0,20}(заказ|предзаказ)/i.test(normalized)) passport.stage = "Есть первые заказы";
     else if (normalized.includes("готовый образец") || normalized.includes("есть образец")) passport.stage = "Есть образец";
     else if (normalized.includes("есть идея") || normalized.includes("хочу запустить") || normalized.includes("планирую запустить")) passport.stage = "Идея";
-    else if (/работающ|уже прода|есть клиенты/i.test(normalized)) passport.stage = "Работающий бизнес";
+    else if (/работающ|уже прода|начал[иаи]? прода|есть продаж|есть клиенты/i.test(normalized)) passport.stage = "Работающий бизнес";
+    else if (/нашл[иаи]? поставщик|посмотрел[иаи]? похож|изучил[иаи]? похож/i.test(normalized)) passport.stage = "Подготовка к запуску";
   }
   if (!passport.problems) {
-    const problem = text.match(/(?:проблема|не понимаю|мешает|сложно)\s*[:—-]?\s*([^.!?]{3,160})/i)?.[1];
-    passport.problems = sentenceValue(problem || "");
+    const problem = text.match(/(?:проблема|не понимаю|непонятно|мешает|сложно)\s*[,：:—-]?\s*([^.!?]{3,160})/i)?.[1];
+    passport.problems = sentenceValue(problem || (/^непонятно/i.test(text) ? text : ""));
   }
   if (!passport.resources) {
     const resources = text.match(/(?:есть|готов(?:ы|о))\s+(эскиз(?:ы)?|образец|команда|сайт|аудитория|клиенты|магазин)/i)?.[0];
@@ -525,7 +538,7 @@ async function getAccessToken(forceRefresh = false, requestId = "") {
 }
 
 function partnerPrompt(passport, team, summaries, userQuestionCount, alfaBusiness) {
-  return `Ты — AI-агент Альфа-партнёр сервиса «Альфа Дело». Ты главный координатор предпринимателя: собираешь контекст, формируешь персональную команду специалистов и направляешь задачи подходящему агенту. Общайся по-русски, коротко и конкретно.
+  return `Ты — AI-агент Альфа-Партнёр сервиса «Альфа Дело». Ты помогаешь предпринимателю понять, что делать дальше: узнаёшь главное о бизнесе, подбираешь команду специалистов и передаёшь каждому понятную задачу.
 
 Паспорт бизнеса: ${JSON.stringify(passport)}
 Текущая команда: ${JSON.stringify(team)}
@@ -540,10 +553,14 @@ function partnerPrompt(passport, team, summaries, userQuestionCount, alfaBusines
 
 Правила:
 - Извлекай известные факты, не стирай заполненные поля и не выдумывай неизвестное.
-- Собери: тип проекта, направление, продукт/услугу, аудиторию, стадию, подготовленные материалы, цель, проблемы, ресурсы, бюджет и задачи для делегирования.
-- Один ответ — максимум один короткий уточняющий вопрос. Не спрашивай известное.
+- Обязательный минимум перед подбором команды: тип проекта, продукт или направление, аудитория, что уже сделано и первый нужный результат. Проблемы, имеющиеся возможности и бюджет тоже сохраняй, если пользователь их назвал; не задавай ради них лишние вопросы.
+- Пиши так, чтобы тебя понял человек без опыта в бизнесе. Используй обычные разговорные слова и короткие предложения.
+- Не используй без объяснения слова «стадия», «сегмент», «гипотеза», «валидация», «MVP», «юнит-экономика», «ресурсы», «артефакты» и «делегировать».
+- Один ответ — один вопрос только о недостающем.
+- В самом вопросе дай 3–5 простых примеров ответа. Например: «только идея», «есть образец», «уже продаём».
+- Вопрос должен занимать не больше трёх коротких предложений и заканчиваться одним знаком вопроса. Не спрашивай то, что уже известно.
 - Задай не больше пяти основных вопросов; шестой допустим только если без него нельзя подобрать команду.
-- Когда контекста достаточно или пользователь уже дал пять ответов, status="team_ready" и team содержит 3–5 наиболее полезных агентов только из разрешённого реестра. Для каждого: id, reason и firstTask. Не добавляй всех.
+- Когда обязательный минимум контекста собран, status="team_ready" и team содержит 3–5 наиболее полезных агентов только из разрешённого реестра. Для каждого: id, reason и firstTask. Не добавляй всех.
 - Если команда уже подтверждена, координируй её: учитывай переданные краткие итоги, рекомендуй одного подходящего специалиста и nextAction="open:<agentId>". Не выполняй за него профильную работу.
 - Сначала реши основную задачу. Только если выявлена конкретная финансовая потребность, можешь вернуть один bankRecommendation из разрешённого реестра. Объясни связь с текущей задачей и спроси, хочет ли пользователь посмотреть или подключить продукт.
 - Не возвращай больше одного банковского продукта за ответ. Не придумывай тарифы, комиссии и условия.
@@ -629,21 +646,19 @@ function previousAskedPayment(history) {
 }
 
 function nextMissingQuestion(passport) {
-  if (!passport.projectType) return "У вас уже есть работающий бизнес или пока только идея?";
-  if (!passport.direction && !passport.product) return "Чем занимается проект и что вы предлагаете клиентам?";
-  if (!passport.audience) return "Кто ваш основной клиент или первый покупатель?";
-  if (!passport.stage) return "На какой стадии сейчас находится проект?";
-  if (!passport.goal) return "Какого результата вы хотите добиться в ближайшее время?";
-  if (!passport.problems) return "Что сейчас сильнее всего мешает двигаться дальше?";
-  if (!passport.resources) return "Какие ресурсы или материалы у вас уже есть?";
-  if (!passport.budget) return "Бюджет уже определён или пока нет?";
-  if (!passport.delegationTasks) return "Какие задачи вы хотите в первую очередь делегировать AI-команде?";
-  return "Какую задачу поручим команде первой?";
+  if (!passport.projectType) return "Для начала уточню главное: у вас уже есть продажи или пока только идея? Можно ответить: «уже продаём», «готовимся к запуску» или «пока только идея».";
+  if (!passport.direction && !passport.product) return "Что именно вы хотите продавать или какую услугу оказывать? Например: худи для студентов, украшения ручной работы или доставка еды.";
+  if (!passport.audience) return "Кто, скорее всего, будет это покупать? Опишите людей простыми словами: кто они, сколько им примерно лет и зачем им ваш продукт.";
+  if (!passport.stage || (!passport.prepared && !passport.resources)) return "Что вы уже успели сделать? Например: только придумали идею, посмотрели похожие проекты, сделали эскизы или образец, нашли поставщика либо уже начали продавать.";
+  if (!passport.goal || !passport.delegationTasks) return "Какой первый результат вам сейчас нужнее всего? Например: понять, будут ли покупать, собрать первые заявки, посчитать расходы или подготовить запуск.";
+  if (!passport.problems) return "Что сейчас больше всего мешает двигаться дальше? Например: непонятно, кому продавать, какую цену поставить, где искать клиентов или с чего начать.";
+  if (!passport.budget) return "Сколько вы готовы потратить на ближайшую проверку идеи? Можно назвать примерную сумму или ответить «пока не знаю».";
+  return "Какую одну задачу поручим команде первой? Например: проверить спрос, посчитать расходы, написать текст или продумать продукт.";
 }
 
 function contextEnough(passport) {
   const core = [passport.projectType, passport.direction || passport.product, passport.audience, passport.stage, passport.goal];
-  return core.filter(Boolean).length >= 4 && Boolean(passport.problems || passport.delegationTasks || passport.prepared);
+  return core.every(Boolean) && Boolean(passport.problems || passport.delegationTasks || passport.prepared || passport.resources);
 }
 
 function humanizeAgentReference(value) {
@@ -680,6 +695,17 @@ function unstructuredCompletion(content, context, errorCode) {
       team: context.team,
       nextAction: normalized.agentId ? `open:${normalized.agentId}` : null,
       sharedSummary: reply.slice(0, 700),
+      bankRecommendation: null,
+    };
+  }
+  if (context.team.length < 3) {
+    return {
+      reply: nextMissingQuestion(context.passport),
+      passport: context.passport,
+      status: "collecting",
+      team: context.team,
+      nextAction: null,
+      sharedSummary: null,
       bankRecommendation: null,
     };
   }
@@ -726,8 +752,8 @@ function parseCompletion(response, context) {
       sharedSummary: null,
       bankRecommendation: {
         productId: "internet_acquiring",
-        reason: "Появился реальный заказ или предзаказ и нужно принять дистанционную оплату",
-        message: "Для дистанционной онлайн-продажи подойдёт интернет-эквайринг.",
+        reason: "Появился заказ или предзаказ, и покупателю нужно удобно заплатить онлайн",
+        message: "Для этого подойдёт интернет-эквайринг — приём оплаты банковской картой через интернет.",
         cta: "Посмотреть вариант",
       },
     };
@@ -754,19 +780,19 @@ function parseCompletion(response, context) {
     };
   }
 
-  const userQuestionCount = context.history.filter((entry) => entry.role === "user").length + 1;
   // Модель может преждевременно поставить team_ready. Команду показываем только
-  // когда собран минимальный контекст или пользователь уже дал пять ответов.
-  const shouldBuildTeam = contextEnough(passport) || userQuestionCount >= 5;
+  // когда собран минимальный контекст, включая цель пользователя.
+  const shouldBuildTeam = contextEnough(passport);
   if (shouldBuildTeam) {
     const team = sanitizeTeam(parsed.team, passport, { fill: true });
-    reply = reply && !reply.includes("?") ? reply : "Контекст бизнеса собран. Я подобрал специалистов под вашу стадию, цель и задачи.";
+    reply = "Я собрал главное о вашем бизнесе и подобрал специалистов под вашу цель. Теперь покажу, кто нужен в команде и с какой задачи лучше начать.";
     return { reply, passport, status: "team_ready", team, nextAction: "review_team", sharedSummary: null, bankRecommendation };
   }
 
-  const modelIsShortQuestion = reply && reply.length <= 220 && (reply.match(/\?/g) || []).length === 1;
   return {
-    reply: modelIsShortQuestion ? reply : nextMissingQuestion(passport),
+    // На этапе знакомства используем проверенные простые формулировки. Модель
+    // по-прежнему понимает свободный ответ и заполняет паспорт бизнеса.
+    reply: nextMissingQuestion(passport),
     passport,
     status: "collecting",
     team: context.team,

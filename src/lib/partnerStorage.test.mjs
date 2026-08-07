@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sanitizePartnerState, serializePartnerState } from "./partnerStorage.mjs";
+import { clearPartnerStorage, sanitizePartnerState, serializePartnerState } from "./partnerStorage.mjs";
 
 test("network fallback state is never persisted", () => {
   const state = {
@@ -26,4 +26,22 @@ test("network fallback state is never persisted", () => {
 test("legacy fallback marker is removed during hydration", () => {
   const hydrated = sanitizePartnerState({ version: 1, aiMode: "fallback", team: [] });
   assert.deepEqual(hydrated, { version: 1, team: [] });
+});
+
+test("full reset removes chat, legacy and Alfa-Business storage", () => {
+  const values = new Map([
+    ["alfa-delo-alpha-partner-v1", "chat"],
+    ["alfa-delo-ai-agent-v2", "legacy"],
+    ["alfaBusinessConnected", "true"],
+    ["alfaPartnerOnboardingSeen", "true"],
+  ]);
+  clearPartnerStorage({ removeItem: (key) => values.delete(key) }, [
+    "alfa-delo-alpha-partner-v1",
+    "alfa-delo-ai-agent-v2",
+    "alfaBusinessConnected",
+  ]);
+  assert.equal(values.has("alfa-delo-alpha-partner-v1"), false);
+  assert.equal(values.has("alfa-delo-ai-agent-v2"), false);
+  assert.equal(values.has("alfaBusinessConnected"), false);
+  assert.equal(values.get("alfaPartnerOnboardingSeen"), "true");
 });

@@ -152,6 +152,38 @@ test("extracts extended business context from free Russian text", () => {
   assert.equal(passport.goal, "Проверить спрос");
 });
 
+test("understands the short answer examples offered by the partner", () => {
+  let passport = __test.extractKnownFacts("Готовимся к запуску", {});
+  assert.equal(passport.projectType, "Бизнес-идея");
+  assert.equal(passport.product, "");
+
+  passport = __test.extractKnownFacts("Доставка еды", passport);
+  assert.equal(passport.product, "Доставка еды");
+
+  passport = __test.extractKnownFacts("Семьи с детьми 25–40 лет", passport);
+  assert.equal(passport.audience, "Семьи с детьми 25–40 лет");
+
+  passport = __test.extractKnownFacts("Нашли поставщика", passport);
+  assert.equal(passport.prepared, "Найден поставщик");
+  assert.equal(passport.stage, "Подготовка к запуску");
+
+  passport = __test.extractKnownFacts("Понять, будут ли покупать", passport);
+  assert.equal(passport.goal, "Понять, будут ли покупать");
+  assert.equal(passport.delegationTasks, "Понять, будут ли покупать");
+
+  passport = __test.extractKnownFacts("Непонятно, кому продавать", passport);
+  assert.equal(passport.problems, "Кому продавать");
+
+  passport = __test.extractKnownFacts("Пока не знаю", passport);
+  assert.equal(passport.budget, "Пока не определён");
+});
+
+test("does not mistake a project-type answer for the audience", () => {
+  const passport = __test.extractKnownFacts("Готовимся к запуску", { product: "Худи" });
+  assert.equal(passport.projectType, "Бизнес-идея");
+  assert.equal(passport.audience, "");
+});
+
 test("recommended team contains 3-5 unique allowed roles", () => {
   const team = __test.buildRecommendedTeam(PASSPORT);
   const ids = team.map((member) => member.id);
@@ -205,6 +237,67 @@ test("partner asks only one compact question while collecting", () => {
   assert.equal(result.status, "collecting");
   assert.equal((result.reply.match(/\?/g) || []).length, 1);
   assert.match(result.reply, /кто/i);
+  assert.match(result.reply, /простыми словами/i);
+  assert.doesNotMatch(result.reply, /стади|сегмент|гипотез|валидац|MVP|ресурс|делегир/i);
+});
+
+test("partner replaces unclear model wording with a plain question and answer examples", () => {
+  const result = __test.parseCompletion(modelResponse({
+    reply: "На какой стадии сейчас ваша идея: исследование рынка, прототип, первые продажи или другая стадия?",
+    passport: { projectType: "Бизнес-идея", product: "Украшения", audience: "Молодые женщины" },
+    status: "collecting",
+    team: [],
+    nextAction: null,
+    sharedSummary: null,
+  }), parseContext({
+    passport: { ...Object.fromEntries(Object.keys(PASSPORT).map((key) => [key, ""])), projectType: "Бизнес-идея", product: "Украшения", audience: "Молодые женщины" },
+  }));
+  assert.equal((result.reply.match(/\?/g) || []).length, 1);
+  assert.match(result.reply, /Что вы уже успели сделать/i);
+  assert.match(result.reply, /только придумали идею/i);
+  assert.doesNotMatch(result.reply, /стади|материал|исследован/i);
+});
+
+test("partner does not build a team before learning the user's goal", () => {
+  const passportWithoutGoal = { ...PASSPORT, goal: "", delegationTasks: "", problems: "" };
+  const result = __test.parseCompletion(modelResponse({
+    reply: "Контекста достаточно.",
+    passport: passportWithoutGoal,
+    status: "team_ready",
+    team: [
+      { id: "marketer", reason: "Нужен спрос", firstTask: "Проверить спрос" },
+      { id: "product", reason: "Нужен продукт", firstTask: "Уточнить продукт" },
+      { id: "finance", reason: "Нужен бюджет", firstTask: "Посчитать расходы" },
+    ],
+  }), parseContext({
+    passport: passportWithoutGoal,
+    history: [
+      { role: "user", content: "У меня есть идея" },
+      { role: "assistant", content: "Что хотите продавать?" },
+      { role: "user", content: "Худи" },
+      { role: "assistant", content: "Кто будет покупать?" },
+      { role: "user", content: "Студенты" },
+      { role: "assistant", content: "Что уже сделали?" },
+      { role: "user", content: "Есть эскизы" },
+    ],
+  }));
+  assert.equal(result.status, "collecting");
+  assert.match(result.reply, /Какой первый результат/i);
+  assert.equal(result.team.length, 0);
+});
+
+test("partner still requires a goal after six unclear answers", () => {
+  const passportWithoutGoal = { ...PASSPORT, goal: "", delegationTasks: "", problems: "" };
+  const history = Array.from({ length: 6 }, (_, index) => ({ role: "user", content: `Неясный ответ ${index + 1}` }));
+  const result = __test.parseCompletion(modelResponse({
+    reply: "Команда готова.",
+    passport: passportWithoutGoal,
+    status: "team_ready",
+    team: [{ id: "marketer" }, { id: "product" }, { id: "finance" }],
+  }), parseContext({ passport: passportWithoutGoal, history }));
+  assert.equal(result.status, "collecting");
+  assert.match(result.reply, /Какой первый результат/i);
+  assert.equal(result.team.length, 0);
 });
 
 test("technical open action is converted to a user-facing recommendation", () => {
@@ -221,10 +314,11 @@ test("technical open action is converted to a user-facing recommendation", () =>
   assert.doesNotMatch(result.reply, /open:/);
 });
 
-test("unstructured model text remains a live structured response", () => {
+test("unstructured partner text is replaced by a clear collecting question", () => {
   const result = __test.parseCompletion({ choices: [{ message: { content: "Рекомендую начать с короткого теста спроса." } }] }, parseContext());
   assert.equal(result.status, "collecting");
-  assert.match(result.reply, /теста спроса/);
+  assert.match(result.reply, /Какую одну задачу/i);
+  assert.equal((result.reply.match(/\?/g) || []).length, 1);
 });
 
 test("specialist returns a result and a transferable short summary", () => {
