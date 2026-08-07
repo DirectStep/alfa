@@ -8,7 +8,7 @@
   --alfa-red-bright: #ff2b2b;
   --future-purple: #9933ff;
   --future-green: #a8ff00;
-  --future-blue: #0078ff;
+  --future-blue: #2f70ff;
   --future-cyan: #08d8d0;
   --surface: #f4f4f5;
   --border-color: #e5e5e7;
@@ -46,8 +46,114 @@ body {
   overflow-x: hidden;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+@media (min-width: 1200px) {
+  .how-steps-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    column-gap: 2.5rem;
+  }
+
+  .team-showcase-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
 .ai-agent-shell {
   font-feature-settings: "ss01";
+  --future-content-width: 1180px;
+  --future-section-space: 112px;
+  --future-radius-sm: 12px;
+  --future-radius-control: 16px;
+  --future-radius-card: 24px;
+  --future-dark: #111111;
+  --future-soft: #f7f7f8;
+  background: #ffffff;
+  font-synthesis: none;
+}
+
+.future-content {
+  width: min(calc(100% - 64px), var(--future-content-width));
+  margin-inline: auto;
+}
+
+.future-section-space {
+  padding-block: var(--future-section-space);
+}
+
+.future-hero-title {
+  font-size: clamp(2.75rem, 5vw, 4.5rem);
+  font-weight: 700;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+}
+
+.future-section-title {
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.032em;
+}
+
+.future-card-title {
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+}
+
+.future-body-large {
+  font-size: clamp(1rem, 1.35vw, 1.1875rem);
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+.future-body {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.future-caption {
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.future-button {
+  min-height: 52px;
+  padding-inline: 24px;
+  border-radius: var(--future-radius-control);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.future-card-radius {
+  border-radius: var(--future-radius-card);
+}
+
+@media (max-width: 1279px) {
+  .ai-agent-shell {
+    --future-section-space: 88px;
+  }
+}
+
+@media (max-width: 767px) {
+  .ai-agent-shell {
+    --future-section-space: 64px;
+    --future-radius-card: 24px;
+  }
+
+  .future-content {
+    width: min(calc(100% - 32px), var(--future-content-width));
+  }
 }
 
 html {

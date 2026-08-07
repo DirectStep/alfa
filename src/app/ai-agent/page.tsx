@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { AlphaPartnerPrototype } from "@/components/ai-agent/AlphaPartnerPrototype";
+import { AlphaPartnerPricing, AlphaPartnerPrototype } from "@/components/ai-agent/AlphaPartnerPrototype";
 import { AiAgentHowItWorks } from "@/components/ai-agent/AiAgentHowItWorks";
 import { assetPath } from "@/lib/assetPath";
 
@@ -13,10 +13,11 @@ export const metadata: Metadata = {
 export default function AiAgentPage() {
   return (
     <>
-      <Header homeHref={assetPath("/")} ctaHref={assetPath("/")} ctaLabel="На главную" showNavigation={false} />
+      <Header homeHref={assetPath("/")} ctaHref={assetPath("/")} ctaLabel="На главную" showNavigation={false} overlay />
       <main>
         <AlphaPartnerPrototype />
         <AiAgentHowItWorks />
+        <AlphaPartnerPricing />
       </main>
       <Footer homeHref={assetPath("/")} sectionHrefPrefix={assetPath("/")} />
     </>

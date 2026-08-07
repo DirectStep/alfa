@@ -35,6 +35,7 @@ function parseContext(overrides = {}) {
     paymentSignal: false,
     paymentConfirmed: false,
     teamConfirmed: false,
+    alfaBusiness: { connected: false, demo: false },
     ...overrides,
   };
 }
@@ -258,6 +259,61 @@ test("confirmed payment keeps the existing explicit branch action", () => {
   const result = __test.parseCompletion(modelResponse({ reply: "Любой ответ", passport: PASSPORT }), parseContext({ paymentConfirmed: true }));
   assert.equal(result.status, "result_ready");
   assert.equal(result.nextAction, "payment_confirmed");
+  assert.equal(result.bankRecommendation.productId, "internet_acquiring");
+});
+
+test("bank recommendations accept only one product from the fixed registry", () => {
+  const result = __test.parseCompletion(modelResponse({
+    reply: "Для регулярных онлайн-заказов можно автоматизировать оплату.",
+    passport: PASSPORT,
+    status: "result_ready",
+    team: [],
+    nextAction: null,
+    sharedSummary: "Пора автоматизировать онлайн-оплату.",
+    bankRecommendation: {
+      productId: "internet_acquiring",
+      reason: "Онлайн-заказы стали регулярными",
+      message: "Для этой задачи может пригодиться интернет-эквайринг Альфа-Бизнес.",
+      cta: "Посмотреть вариант",
+    },
+  }), parseContext({ role: "specialist", agentId: "finance" }));
+  assert.equal(result.bankRecommendation.productId, "internet_acquiring");
+  assert.equal(Object.keys(result.bankRecommendation).length, 4);
+});
+
+test("unknown banking products and premature payment recommendations are rejected", () => {
+  assert.equal(__test.sanitizeBankRecommendation({ productId: "credit", reason: "Причина", message: "Текст" }), null);
+  const result = __test.parseCompletion(modelResponse({
+    reply: "Сначала подтвердим заказ.",
+    passport: PASSPORT,
+    status: "working",
+    team: [],
+    nextAction: null,
+    sharedSummary: null,
+    bankRecommendation: { productId: "internet_acquiring", reason: "Возможный заказ", message: "Интернет-эквайринг", cta: "Подключить" },
+  }), parseContext({ teamConfirmed: true, paymentSignal: true }));
+  assert.equal(result.bankRecommendation, null);
+});
+
+test("bank registry contains exactly the eight payment business products", () => {
+  assert.deepEqual(Object.keys(__test.BANK_PRODUCT_REGISTRY).sort(), [
+    "alfa_kassa",
+    "alfa_pay",
+    "alfa_softpos",
+    "cloud_kassa",
+    "internet_acquiring",
+    "merchant_acquiring",
+    "mpos",
+    "sbp",
+  ]);
+});
+
+test("sanitizes demo Alfa-Business metrics without accepting arbitrary fields", () => {
+  const value = __test.sanitizeAlfaBusiness({ connected: true, demo: false, metrics: { period: "30 дней", revenue: 184000, transactions: 47, averageCheck: 3915, revenueTrend: 12, repeatCustomers: 8, secret: "no" } });
+  assert.equal(value.connected, true);
+  assert.equal(value.demo, true);
+  assert.equal(value.metrics.revenue, 184000);
+  assert.equal("secret" in value.metrics, false);
 });
 
 test("registry exposes exactly the eight allowed specialist roles", () => {

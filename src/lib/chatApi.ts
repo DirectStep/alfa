@@ -31,6 +31,26 @@ export type ChatTeamSummary = {
   summary: string;
 };
 
+export type BankRecommendation = {
+  productId: "merchant_acquiring" | "internet_acquiring" | "alfa_kassa" | "cloud_kassa" | "alfa_softpos" | "mpos" | "alfa_pay" | "sbp";
+  reason: string;
+  message: string;
+  cta: string;
+};
+
+export type AlfaBusinessContext = {
+  connected: boolean;
+  demo: boolean;
+  metrics?: {
+    period: string;
+    revenue: number;
+    transactions: number;
+    averageCheck: number;
+    revenueTrend: number;
+    repeatCustomers: number;
+  };
+};
+
 export type ChatStatus = "collecting" | "ready" | "team_ready" | "working" | "result_ready" | "payment_confirmation" | "error";
 
 export type ChatResponse = {
@@ -40,6 +60,7 @@ export type ChatResponse = {
   team: ChatTeamMember[];
   nextAction: string | null;
   sharedSummary: string | null;
+  bankRecommendation: BankRecommendation | null;
   errorCode?: string;
   requestId?: string;
 };
@@ -53,6 +74,7 @@ export type ChatRequest = {
   team?: ChatTeamMember[];
   teamSummaries?: ChatTeamSummary[];
   teamConfirmed?: boolean;
+  alfaBusiness?: AlfaBusinessContext;
 };
 
 export type HealthResponse = {
@@ -91,6 +113,11 @@ function isChatResponse(value: unknown): value is ChatResponse {
   if (!value || typeof value !== "object") return false;
   const response = value as Partial<ChatResponse>;
   const passport = response.passport as Record<string, unknown> | undefined;
+  const recommendation = response.bankRecommendation as Partial<BankRecommendation> | null | undefined;
+  const validRecommendation = recommendation == null || (
+    ["merchant_acquiring", "internet_acquiring", "alfa_kassa", "cloud_kassa", "alfa_softpos", "mpos", "alfa_pay", "sbp"].includes(recommendation.productId ?? "")
+    && [recommendation.reason, recommendation.message, recommendation.cta].every((field) => typeof field === "string")
+  );
   return typeof response.reply === "string"
     && STATUSES.includes(response.status as ChatStatus)
     && (response.nextAction === null || typeof response.nextAction === "string")
@@ -98,7 +125,8 @@ function isChatResponse(value: unknown): value is ChatResponse {
     && Boolean(passport)
     && Object.values(passport ?? {}).every((field) => typeof field === "string")
     && Array.isArray(response.team)
-    && response.team.every(isTeamMember);
+    && response.team.every(isTeamMember)
+    && validRecommendation;
 }
 
 function requestId() {
@@ -131,6 +159,7 @@ async function sendOnce(input: ChatRequest, id: string) {
         agentId: input.agentId ?? "alpha-partner",
         team: input.team ?? [],
         teamSummaries: input.teamSummaries ?? [],
+        alfaBusiness: input.alfaBusiness ?? { connected: false, demo: false },
       }),
       signal: controller.signal,
     });

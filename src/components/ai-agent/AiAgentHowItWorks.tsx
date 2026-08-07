@@ -1,62 +1,38 @@
+import Image from "next/image";
+
 import { Container } from "@/components/ui/Container";
-import { NumberedFeatureCard } from "@/components/ui/NumberedFeatureCard";
 import { assetPath } from "@/lib/assetPath";
 
 const agentSteps = [
-  {
-    number: "1",
-    numberImage: "/assets/ai/step-numbers/1.png",
-    title: "Собирает контекст",
-    text: "Принимает свободное описание вместо длинной анкеты и уточняет только недостающее: тип проекта, продукт, аудиторию, стадию, цель, текущие проблемы, ресурсы и бюджет. Ответы превращаются в единый паспорт бизнеса, доступный всей AI-команде — вводную не приходится повторять в каждом чате.",
-    tone: "bg-future-purple text-white",
-  },
-  {
-    number: "2",
-    numberImage: "/assets/ai/step-numbers/2.png",
-    title: "Подбирает AI-команду",
-    text: "Выбирает 3–5 специалистов из фиксированного реестра ролей под текущую стадию и цель проекта. Например, маркетолога — для проверки спроса, продуктового специалиста — для MVP, финансиста — для экономики запуска. Для каждого объясняет причину выбора и формулирует первую задачу; состав можно изменить.",
-    tone: "bg-future-blue text-white",
-  },
-  {
-    number: "3",
-    numberImage: "/assets/ai/step-numbers/3.png",
-    title: "Разделяет задачи",
-    text: "После подтверждения команды каждый специалист получает отдельный чат, роль, допустимые задачи, статус и историю. Все агенты учитывают общий паспорт, но их переписки не смешиваются. Предприниматель выбирает исполнителя, ставит задачу своими словами и получает конкретный результат: план, расчёт, оффер, структуру или чек-лист.",
-    tone: "bg-future-blue text-white",
-  },
-  {
-    number: "4",
-    numberImage: "/assets/ai/step-numbers/4.png",
-    title: "Объединяет результаты",
-    text: "Готовый результат специалиста одним действием передаётся Альфа-Партнёру как краткое резюме. Главный агент учитывает переданные итоги команды и предлагает один следующий шаг. Продукт Альфы появляется только при подтверждённой финансовой потребности — например, когда уже есть заказ и нужно принять оплату.",
-    tone: "bg-future-purple text-white",
-  },
+  { number: "1", image: "/assets/ai/decor/step-1.webp", title: "Собирает контекст", text: "Узнаёт продукт, аудиторию, стадию, цель и ресурсы." },
+  { number: "2", image: "/assets/ai/decor/step-2.webp", title: "Подбирает AI-команду", text: "Выбирает 3–5 специалистов под текущие задачи." },
+  { number: "3", image: "/assets/ai/decor/step-3.webp", title: "Разделяет задачи", text: "Каждый специалист получает свою роль и рабочий чат." },
+  { number: "4", image: "/assets/ai/decor/step-4.webp", title: "Объединяет результаты", text: "Собирает итоги команды и предлагает следующее действие." },
 ];
 
 export function AiAgentHowItWorks() {
   return (
-    <section id="how-ai-agent-works" className="scroll-mt-6 bg-white py-16 text-black sm:py-20 laptop:py-24">
-      <Container>
-        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-alfa-red">Четыре шага</p>
-        <h2 className="mt-2 max-w-[900px] text-[36px] font-black leading-[0.94] tracking-[-0.055em] sm:text-[48px] laptop:text-[56px]">
-          Как работает Альфа-Партнёр
-        </h2>
-        <p className="mt-5 max-w-[980px] text-[15px] font-medium leading-6 text-black/60 sm:text-[18px] sm:leading-7">
-          Прототип показывает один сквозной сценарий: от свободного описания бизнеса до согласованной AI-команды, конкретного результата и следующего действия. На каждом этапе видно, какие данные использует агент, что получает предприниматель и почему продукт Альфы появляется только в нужный момент.
-        </p>
-
-        <ol className="mt-9 grid gap-4 md:grid-cols-2 sm:mt-11">
-          {agentSteps.map((step) => (
-            <NumberedFeatureCard
-              key={step.number}
-              {...step}
-              numberImage={assetPath(step.numberImage)}
-              tone={step.tone}
-              className="h-full min-h-[290px] sm:min-h-[310px]"
-              prominentNumber
-            />
-          ))}
-        </ol>
+    <section id="how-ai-agent-works" className="scroll-mt-6 bg-future-green text-black">
+      <Container className="ai-agent-container">
+        <div className="mx-auto max-w-[1180px] py-20 sm:py-24 laptop:py-28">
+          <p className="future-caption text-black/55">Четыре шага</p>
+          <h2 className="future-section-title mt-4 max-w-[900px]">Как работает Альфа-Партнёр</h2>
+          <ol className="how-steps-grid mt-14 grid gap-x-8 gap-y-12 sm:grid-cols-2">
+            {agentSteps.map((step) => (
+              <li key={step.number} className="min-w-0">
+                <Image
+                  src={assetPath(step.image)}
+                  alt={step.number}
+                  width={96}
+                  height={96}
+                  className="h-[72px] w-[72px] object-contain object-left sm:h-[82px] sm:w-[82px]"
+                />
+                <h3 className="mt-7 text-[22px] font-bold leading-[1.02] tracking-[-.025em]">{step.title}</h3>
+                <p className="mt-4 max-w-[250px] text-[14px] font-normal leading-6 text-black/68">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </Container>
     </section>
   );

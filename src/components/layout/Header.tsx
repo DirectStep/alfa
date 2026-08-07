@@ -12,6 +12,7 @@ type HeaderProps = {
   ctaHref?: string;
   ctaLabel?: string;
   showNavigation?: boolean;
+  overlay?: boolean;
 };
 
 export function Header({
@@ -19,11 +20,12 @@ export function Header({
   ctaHref = assetPath("/ai-agent"),
   ctaLabel = "Собрать маршрут",
   showNavigation = true,
+  overlay = false,
 }: HeaderProps = {}) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="relative z-50 bg-alfa-red text-white">
+    <header className={`${overlay ? "absolute inset-x-0 top-0 bg-transparent" : "relative bg-alfa-red"} z-50 text-white`}>
       <Container className="flex h-[92px] items-center justify-between laptop:h-[104px]">
         <a href={homeHref} className="flex shrink-0 items-center" aria-label="Альфа-Будущее и Альфа-Дело, в начало страницы">
           <Image src={assetPath("/assets/brand/alfa-future-x-delo-final.png")} alt="Альфа-Будущее × Альфа-Дело" width={1280} height={427} priority unoptimized sizes="(min-width: 1280px) 270px, 240px" className="h-20 w-auto laptop:h-[90px]" />
