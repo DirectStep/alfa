@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   ChevronRight,
   Database,
+  Download,
   Info,
   Pencil,
   Plus,
@@ -45,6 +47,7 @@ import {
 } from "@/lib/chatApi";
 import { ALFA_BUSINESS_STORAGE_KEY, DEMO_ALFA_BUSINESS_DATA, SUBSCRIPTION_PLAN } from "@/lib/alfaBusinessDemo";
 import { getBankProduct } from "@/lib/bankProducts";
+import { downloadTeamPrototypeKit } from "@/lib/teamPrototypeKit";
 
 type Message = { id: string; role: "agent" | "user"; text: string; source?: "ai" | "demo"; bankRecommendation?: BankRecommendation | null };
 type Phase = "collecting" | "context_ready" | "team_review" | "active";
@@ -563,7 +566,7 @@ export function AlphaPartnerPrototype() {
         phase: "active",
         activeAgentId: "alpha-partner",
         agentStatuses: statuses,
-        partnerHistory: [...current.partnerHistory, makeMessage("agent", "Команда подтверждена. Откройте «Моя команда», выберите специалиста и делегируйте первую задачу. Я соберу результаты и помогу определить общий следующий шаг.")],
+        partnerHistory: [...current.partnerHistory, makeMessage("agent", "Команда подтверждена. Откройте «Моя команда», выберите специалиста и делегируйте первую задачу. Там же можно скачать презентационный ZIP-комплект команды для компьютера или телефона. Внутри сохранены роли и контекст проекта, но локальные агенты пока не запускаются и не управляют устройством.")],
       };
     });
     setEditingTeam(false);
@@ -813,14 +816,13 @@ export function AlphaPartnerPrototype() {
     window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
   }
 
-  function closeOnboarding(focusChat = false) {
+  function closeOnboarding() {
     try {
       window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "true");
     } catch {
       // Приветствие всё равно можно закрыть, даже если localStorage недоступен.
     }
     setOnboardingOpen(false);
-    if (focusChat) window.requestAnimationFrame(() => inputRef.current?.focus());
   }
 
   function connectAlfaBusiness() {
@@ -837,6 +839,15 @@ export function AlphaPartnerPrototype() {
   function openPlans() {
     setTeamPanelOpen(false);
     window.setTimeout(() => document.getElementById("alpha-partner-plans")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+
+  function downloadTeamKit() {
+    try {
+      downloadTeamPrototypeKit({ passport: state.passport, team: state.team, agentTasks: state.agentTasks });
+      setToast("Скачивание ZIP-комплекта начато");
+    } catch {
+      setToast("Не удалось собрать ZIP. Попробуйте ещё раз");
+    }
   }
 
   function restart() {
@@ -1065,8 +1076,8 @@ export function AlphaPartnerPrototype() {
       {state.teamConfirmed && <div className="bg-white"><Container className="ai-agent-container"><div className="mx-auto max-w-[1180px]"><TeamShowcase team={state.team} statuses={state.agentStatuses} onOpen={openAgent} onOpenAll={() => setTeamPanelOpen(true)} /></div></Container></div>}
       <AlfaBusinessSection connected={alfaBusinessConnected} onConnect={() => setAlfaBusinessOpen(true)} onExplain={() => setBusinessDataInfoOpen(true)} />
 
-      {teamPanelOpen && <TeamPanel state={state} onClose={() => setTeamPanelOpen(false)} onOpen={openAgent} onOpenPlans={openPlans} />}
-      {onboardingOpen && <OnboardingCarousel onClose={() => closeOnboarding(false)} onStart={() => closeOnboarding(true)} />}
+      {teamPanelOpen && <><TeamPanel state={state} onClose={() => setTeamPanelOpen(false)} onOpen={openAgent} onOpenPlans={openPlans} /><TeamKitDownloadDock onDownload={downloadTeamKit} /></>}
+      {onboardingOpen && <OnboardingCarousel onClose={closeOnboarding} onStart={closeOnboarding} />}
       {resetOpen && <ConfirmModal title="Начать заново?" text="Текущая команда, отдельные диалоги и переданные результаты будут удалены из браузера." confirmLabel="Начать заново" onConfirm={restart} onClose={() => setResetOpen(false)} />}
       {productModal && <ProductConnectModal recommendation={productModal} detailsOpen={productDetailsOpen} onShowDetails={() => setProductDetailsOpen(true)} onClose={() => { setProductModal(null); setProductDetailsOpen(false); }} />}
       {alfaBusinessOpen && <AlfaBusinessModal onConfirm={connectAlfaBusiness} onClose={() => setAlfaBusinessOpen(false)} />}
@@ -1191,7 +1202,7 @@ export function AlphaPartnerPricing() {
         <h2 id="plans-title" className="mt-4 max-w-[720px] text-[clamp(2.25rem,3.5vw,3rem)] font-bold leading-[.98] tracking-[-.03em]">Больше возможностей для вашего бизнеса</h2>
         <p className="future-body-large mt-4 max-w-[650px] text-white/68">Расширенные возможности уже включены в демонстрации.</p>
       </div>
-      <Image src={assetPath("/assets/ai/decor/pro-workflow.webp")} alt="" width={558} height={450} className="pointer-events-none absolute -right-16 -top-12 hidden h-[270px] w-[335px] object-contain opacity-90 laptop:block" aria-hidden="true" />
+      <Image src={assetPath("/assets/ai/decor/pro-student.png")} alt="" width={1024} height={1450} className="pointer-events-none absolute right-20 top-16 hidden h-[330px] w-[260px] object-contain object-bottom opacity-95 laptop:block" aria-hidden="true" />
       <div className="relative z-10 mt-8 grid gap-4 laptop:grid-cols-2">
         <PlanCard title="Альфа-Партнёр" eyebrow="Бесплатно" features={["До 3 AI-специалистов", "Базовый паспорт бизнеса", "Отдельные рабочие чаты", "Базовые рекомендации", "Ограниченная история"]} action="Базовый доступ" />
         <PlanCard title="Альфа-Партнёр Pro" eyebrow="Расширенный доступ" active features={["До 6 AI-специалистов", "Длинная история бизнеса", "Совместная работа специалистов", "Анализ данных Альфа-Бизнеса", "Расширенные рекомендации"]} action="Ваш текущий тариф" />
@@ -1319,22 +1330,243 @@ function TeamPanel({ state, onClose, onOpen, onOpenPlans }: { state: PartnerStat
   return <div className="fixed inset-0 z-[110] bg-black/65 backdrop-blur-[3px]" role="dialog" aria-modal="true" aria-labelledby="team-panel-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><aside ref={dialogRef} className="ml-auto flex h-full w-full max-w-[520px] flex-col overflow-hidden bg-[#f3f3f4] shadow-[-28px_0_80px_rgba(0,0,0,.22)]"><div className="bg-alfa-red p-5 text-white sm:p-7"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/65">Команда вашего бизнеса</p><h2 id="team-panel-title" className="mt-2 text-[34px] font-black leading-none tracking-[-0.055em]">Моя команда · {state.team.length}</h2><p className="mt-3 max-w-[360px] text-[11px] font-medium leading-5 text-white/70">Один главный партнёр и специалисты с отдельными задачами и историями.</p></div><button type="button" onClick={onClose} className="grid h-12 w-12 shrink-0 place-items-center rounded-[15px] bg-white text-black" aria-label="Закрыть команду"><X size={19} /></button></div></div><div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-6"><button type="button" onClick={() => onOpen("alpha-partner")} className={`flex w-full items-center gap-3 rounded-[22px] p-4 text-left shadow-sm ${state.activeAgentId === "alpha-partner" ? "bg-black text-white" : "bg-white text-black ring-1 ring-black/8"}`}><RoleAvatar id="alpha-partner" size="lg" /><span className="min-w-0 flex-1"><span className="block text-[16px] font-bold">Альфа-Партнёр</span><span className={`mt-1 block text-[10px] font-medium leading-4 ${state.activeAgentId === "alpha-partner" ? "text-white/58" : "text-black/45"}`}>Главный координатор · объединяет результаты команды</span></span><ChevronRight size={19} /></button>{state.team.map((member) => { const status = state.agentStatuses[member.id] ?? "idle"; return <article key={member.id} className={`rounded-[22px] p-4 shadow-sm ${state.activeAgentId === member.id ? "bg-future-blue text-white" : "bg-white text-black ring-1 ring-black/8"}`}><div className="flex items-start gap-3"><RoleAvatar id={member.id} /><div className="min-w-0 flex-1"><p className="text-[15px] font-bold">{member.name}</p><p className={`mt-1 flex items-center gap-2 text-[10px] font-bold ${state.activeAgentId === member.id ? "text-white/72" : "text-black/45"}`}><StatusDot status={status} />{STATUS_LABELS[status]}</p></div></div><p className={`mt-4 line-clamp-2 border-t pt-3 text-[10px] font-medium leading-4 ${state.activeAgentId === member.id ? "border-white/18 text-white/68" : "border-black/8 text-black/48"}`}>{state.agentTasks[member.id] ? `Последняя задача: ${state.agentTasks[member.id]}` : `Первая задача: ${member.firstTask}`}</p><button type="button" onClick={() => onOpen(member.id)} className={`mt-4 flex min-h-11 w-full items-center justify-between rounded-[13px] px-4 text-[10px] font-bold ${state.activeAgentId === member.id ? "bg-white text-black" : "bg-black text-white"}`}>Открыть чат <ArrowRight size={15} /></button></article>; })}<div className="rounded-[20px] bg-black p-4 text-white"><p className="text-[10px] font-bold text-future-green">Альфа-Партнёр Pro</p><p className="mt-1 text-[11px] text-white/62">{state.team.length} из 6 специалистов добавлено</p><button type="button" onClick={onOpenPlans} className="mt-3 min-h-11 w-full rounded-[12px] bg-white/12 px-4 text-[10px] font-bold">Возможности тарифа</button></div></div><p className="bg-white px-5 py-4 text-[9px] font-medium leading-4 text-black/42 sm:px-7">Все агенты используют общий паспорт бизнеса, но истории их чатов хранятся отдельно.</p></aside></div>;
 }
 
+function TeamKitDownloadDock({ onDownload }: { onDownload: () => void }) {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setTarget(document.querySelector<HTMLElement>('[aria-labelledby="team-panel-title"] aside'));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (!target) return null;
+
+  return createPortal(
+    <div className="pointer-events-none fixed bottom-[46px] right-0 z-[120] w-full max-w-[520px] px-4 pb-[env(safe-area-inset-bottom)] sm:px-6">
+      <div className="pointer-events-auto rounded-[20px] bg-future-blue p-4 text-white shadow-[0_16px_42px_rgba(0,0,0,.28)]">
+        <div className="flex items-start gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-future-green text-black"><Download size={18} /></span>
+          <div>
+            <p className="text-[14px] font-bold">Забрать команду на устройство</p>
+            <p className="mt-1 text-[10px] font-medium leading-4 text-white/65">Презентационный ZIP с паспортом бизнеса, ролями и задачами агентов.</p>
+          </div>
+        </div>
+        <button type="button" onClick={onDownload} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[13px] bg-white px-4 text-[11px] font-bold text-black">
+          Скачать ZIP-комплект <Download size={15} />
+        </button>
+        <p className="mt-3 text-[9px] font-medium leading-4 text-white/50">Агенты внутри архива пока не запускаются и не получают доступ к устройству.</p>
+      </div>
+    </div>,
+    target,
+  );
+}
+
 function ConfirmModal({ title, text, confirmLabel, onConfirm, onClose }: { title: string; text: string; confirmLabel: string; onConfirm: () => void; onClose: () => void }) {
   const dialogRef = useDialogFocus<HTMLDivElement>(onClose);
   return <div className="fixed inset-0 z-[120] grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div ref={dialogRef} className="w-full max-w-[460px] rounded-[26px] bg-white p-6"><div className="flex items-start justify-between gap-4"><h2 id="confirm-title" className="text-[24px] font-bold tracking-[-0.03em]">{title}</h2><button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted" aria-label="Закрыть"><X size={18} /></button></div><p className="mt-4 text-[13px] leading-5 text-black/55">{text}</p><div className="mt-6 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onConfirm} className="min-h-12 flex-1 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white">{confirmLabel}</button><button type="button" onClick={onClose} className="min-h-12 rounded-[14px] bg-muted px-5 text-[12px] font-bold">Отмена</button></div></div></div>;
 }
 
-function ProductConnectModal({ recommendation, detailsOpen, onShowDetails, onClose }: { recommendation: BankRecommendation; detailsOpen: boolean; onShowDetails: () => void; onClose: () => void }) {
+function ProductConnectModal({
+  recommendation,
+  detailsOpen,
+  onShowDetails,
+  onClose,
+}: {
+  recommendation: BankRecommendation;
+  detailsOpen: boolean;
+  onShowDetails: () => void;
+  onClose: () => void;
+}) {
   const dialogRef = useDialogFocus<HTMLDivElement>(onClose);
   const product = getBankProduct(recommendation.productId);
   if (!product) return null;
-  return <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="product-connect-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div ref={dialogRef} className="max-h-[90dvh] w-full max-w-[620px] overflow-y-auto rounded-[30px] bg-white p-6 text-black sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.09em] text-alfa-red">Продуктовая демонстрация</p><h2 id="product-connect-title" className="mt-2 text-[30px] font-black leading-none tracking-[-.045em]">В полной версии подключим здесь</h2></div><button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted" aria-label="Закрыть"><X size={18} /></button></div><p className="mt-5 text-[13px] leading-6 text-black/58">Сейчас перед вами прототип Альфа-Партнёра. В полноценной версии после подтверждения пользователь сможет перейти в защищённый Альфа-Бизнес и подключить выбранный продукт.</p><div className="mt-5 grid gap-2 sm:grid-cols-4">{["Рекомендация AI", "Подтверждение", "Альфа-Бизнес", "Подключение продукта"].map((step, index) => <div key={step} className={`rounded-[16px] p-3 text-[10px] font-bold leading-4 ${index === 3 ? "bg-future-green" : "bg-muted"}`}>{index + 1}. {step}</div>)}</div>{detailsOpen && <div className="mt-5 rounded-[20px] bg-future-blue p-5 text-white"><p className="text-[9px] font-bold uppercase tracking-[.09em] text-future-green">Демонстрационная карточка</p><h3 className="mt-2 text-[20px] font-bold">{product.name}</h3><p className="mt-3 text-[12px] leading-5 text-white/72">{product.solves}</p><p className="mt-3 text-[11px] leading-5 text-white/58">Причина сейчас: {recommendation.reason}</p></div>}<div className="mt-6 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onClose} className="min-h-12 flex-1 rounded-[14px] bg-black px-5 text-[12px] font-bold text-white">Понятно</button><button type="button" onClick={onShowDetails} className="min-h-12 rounded-[14px] bg-muted px-5 text-[12px] font-bold">Посмотреть, как это будет работать</button></div></div></div>;
+  return (
+    <div
+      className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="product-connect-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        className="max-h-[90dvh] w-full max-w-[620px] overflow-y-auto rounded-[30px] bg-white p-6 text-black sm:p-8"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.09em] text-alfa-red">
+              Продуктовая демонстрация
+            </p>
+            <h2
+              id="product-connect-title"
+              className="mt-2 text-[30px] font-black leading-none tracking-[-.045em]"
+            >
+              В полной версии подключим здесь
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted"
+            aria-label="Закрыть"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <p className="mt-5 text-[13px] leading-6 text-black/58">
+          Сейчас перед вами прототип Альфа-Партнёра. В полноценной версии после
+          подтверждения пользователь сможет перейти в защищённый Альфа-Бизнес и
+          подключить выбранный продукт.
+        </p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-4">
+          {[
+            "Рекомендация AI",
+            "Подтверждение",
+            "Альфа-Бизнес",
+            "Подключение продукта",
+          ].map((step, index) => (
+            <div
+              key={step}
+              className={`rounded-[16px] p-3 text-[10px] font-bold leading-4 ${index === 3 ? "bg-future-green" : "bg-muted"}`}
+            >
+              {index + 1}. {step}
+            </div>
+          ))}
+        </div>
+        {detailsOpen && (
+          <div className="mt-5 rounded-[20px] bg-future-blue p-5 text-white">
+            <p className="text-[9px] font-bold uppercase tracking-[.09em] text-future-green">
+              Демонстрационная карточка
+            </p>
+            <h3 className="mt-2 text-[20px] font-bold">{product.name}</h3>
+            <p className="mt-3 text-[12px] leading-5 text-white/72">
+              {product.solves}
+            </p>
+            <p className="mt-3 text-[11px] leading-5 text-white/58">
+              Причина сейчас: {recommendation.reason}
+            </p>
+          </div>
+        )}
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 flex-1 rounded-[14px] bg-black px-5 text-[12px] font-bold text-white"
+          >
+            Понятно
+          </button>
+          <button
+            type="button"
+            onClick={onShowDetails}
+            className="min-h-12 rounded-[14px] bg-muted px-5 text-[12px] font-bold"
+          >
+            Посмотреть, как это будет работать
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function AlfaBusinessModal({ onConfirm, onClose }: { onConfirm: () => void; onClose: () => void }) {
+function AlfaBusinessModal({
+  onConfirm,
+  onClose,
+}: {
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
   const dialogRef = useDialogFocus<HTMLDivElement>(onClose);
-  const data = ["Поступления", "Расходы", "Количество операций", "Динамику оборота", "Средний чек", "Регулярность платежей", "Подключённые продукты Альфы"];
-  return <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="alfa-business-modal-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div ref={dialogRef} className="max-h-[90dvh] w-full max-w-[640px] overflow-y-auto rounded-[30px] bg-white p-6 sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.09em] text-alfa-red">Только с разрешения</p><h2 id="alfa-business-modal-title" className="mt-2 text-[30px] font-black leading-none tracking-[-.045em]">Подключить данные Альфа-Бизнеса</h2></div><button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted" aria-label="Закрыть"><X size={18} /></button></div><p className="mt-5 text-[13px] leading-6 text-black/58">С вашего разрешения Альфа-Партнёр сможет учитывать данные бизнеса и использовать их для рекомендаций.</p><div className="mt-5 grid gap-2 sm:grid-cols-2">{data.map((item) => <div key={item} className="flex min-h-12 items-center gap-3 rounded-[15px] bg-muted px-4 text-[11px] font-bold"><Check size={15} className="text-alfa-red" />{item}</div>)}</div><div className="mt-5 rounded-[20px] bg-future-green p-4 text-[11px] font-bold leading-5"><p>AI не совершает операции самостоятельно.</p><p className="mt-1">Любое финансовое действие требует подтверждения пользователя.</p></div><p className="mt-4 text-[10px] text-black/42">В прототипе подключается только демонстрационный набор показателей — без доступа к банковскому счёту.</p><div className="mt-6 flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onConfirm} className="min-h-12 flex-1 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white">Разрешить демо-доступ</button><button type="button" onClick={onClose} className="min-h-12 rounded-[14px] bg-muted px-5 text-[12px] font-bold">Не сейчас</button></div></div></div>;
+  const data = [
+    "Поступления",
+    "Расходы",
+    "Количество операций",
+    "Динамику оборота",
+    "Средний чек",
+    "Регулярность платежей",
+    "Подключённые продукты Альфы",
+  ];
+  return (
+    <div
+      className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="alfa-business-modal-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        className="max-h-[90dvh] w-full max-w-[640px] overflow-y-auto rounded-[30px] bg-white p-6 sm:p-8"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.09em] text-alfa-red">
+              Только с разрешения
+            </p>
+            <h2
+              id="alfa-business-modal-title"
+              className="mt-2 text-[30px] font-black leading-none tracking-[-.045em]"
+            >
+              Подключить данные Альфа-Бизнеса
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted"
+            aria-label="Закрыть"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <p className="mt-5 text-[13px] leading-6 text-black/58">
+          С вашего разрешения Альфа-Партнёр сможет учитывать данные бизнеса и
+          использовать их для рекомендаций.
+        </p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          {data.map((item) => (
+            <div
+              key={item}
+              className="flex min-h-12 items-center gap-3 rounded-[15px] bg-muted px-4 text-[11px] font-bold"
+            >
+              <Check size={15} className="text-alfa-red" />
+              {item}
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 rounded-[20px] bg-future-green p-4 text-[11px] font-bold leading-5">
+          <p>AI не совершает операции самостоятельно.</p>
+          <p className="mt-1">
+            Любое финансовое действие требует подтверждения пользователя.
+          </p>
+        </div>
+        <p className="mt-4 text-[10px] text-black/42">
+          В прототипе подключается только демонстрационный набор показателей —
+          без доступа к банковскому счёту.
+        </p>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="min-h-12 flex-1 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white"
+          >
+            Разрешить демо-доступ
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 rounded-[14px] bg-muted px-5 text-[12px] font-bold"
+          >
+            Не сейчас
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function BusinessDataInfoModal({ onClose }: { onClose: () => void }) {

@@ -46,6 +46,10 @@ body {
   overflow-x: hidden;
 }
 
+[aria-labelledby="team-panel-title"] aside > .flex-1 {
+  padding-bottom: 14rem;
+}
+
 *,
 *::before,
 *::after {
