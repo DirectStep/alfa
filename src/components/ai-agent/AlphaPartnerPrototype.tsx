@@ -11,7 +11,9 @@ import {
   Database,
   Download,
   Info,
+  Pause,
   Pencil,
+  Play,
   Plus,
   RotateCcw,
   Send,
@@ -48,6 +50,8 @@ import {
 import { ALFA_BUSINESS_STORAGE_KEY, DEMO_ALFA_BUSINESS_DATA, SUBSCRIPTION_PLAN } from "@/lib/alfaBusinessDemo";
 import { getBankProduct } from "@/lib/bankProducts";
 import { downloadTeamPrototypeKit } from "@/lib/teamPrototypeKit";
+import { DEMO_PASSPORT, DEMO_STEPS, DEMO_TEAM, type DemoResultKind, type DemoStep } from "@/lib/demoScenario";
+import { useDemoRunner } from "@/components/ai-agent/useDemoRunner";
 
 type Message = { id: string; role: "agent" | "user"; text: string; source?: "ai" | "demo"; bankRecommendation?: BankRecommendation | null };
 type Phase = "collecting" | "context_ready" | "team_review" | "active";
@@ -97,26 +101,22 @@ const LEGACY_START_MESSAGE = "Расскажите, с чем вы пришли.
 const PREVIOUS_START_MESSAGE = "Привет! Я ваш Альфа-Партнёр. Помогу развивать действующий бизнес или запустить новый: разберусь в ситуации, соберу AI-команду и предложу следующий шаг. Если появится конкретная финансовая задача, подскажу подходящий продукт Альфа-Банка. С чем вы пришли — у вас уже есть бизнес или пока идея?";
 const START_MESSAGE = "Привет! Я Альфа-Партнёр. Сначала разберусь, что у вас за бизнес и чего вы хотите добиться. Затем подберу 3–5 AI-специалистов и объясню, какую задачу дать каждому. У вас уже есть продажи или пока только идея?";
 const START_REPLIES = ["У меня уже есть бизнес", "У меня есть бизнес-идея", "Хочу запустить новый продукт"];
-const DEMO_SCENARIO_TITLE = "Запуск креативной студии";
-const DEMO_PASSPORT: BusinessPassport = {
-  projectType: "Бизнес-идея",
-  direction: "Креативные индустрии",
-  product: "Студия брендинга и контента",
-  audience: "Небольшие локальные бренды и молодые проекты",
-  stage: "Подготовка к запуску",
-  prepared: "Есть портфолио двух основателей и три тестовых кейса",
-  goal: "Получить первые три платных проекта",
-  problems: "Непонятно, как упаковать предложение и стабильно находить клиентов",
-  resources: "Два основателя, навыки дизайна и контента, готовое портфолио",
-  budget: "До 80 000 ₽ на первый месяц",
-  delegationTasks: "Проверить спрос, упаковать предложение и посчитать экономику запуска",
-};
 const PROCESS_STEPS = ["Расскажите о бизнесе", "Получите AI-команду", "Делегируйте задачи", "Соберите результат"];
 const TEAM_VISUALS: Record<string, string> = {
   marketer: "/assets/ai/target.png",
   finance: "/assets/ai/growth.png",
   product: "/assets/ai/idea.png",
   copywriter: "/assets/ai/rocket.png",
+};
+const AGENT_AVATARS: Record<string, string> = {
+  marketer: "/assets/ai/avatars/cat.png",
+  product: "/assets/ai/avatars/duck.png",
+  finance: "/assets/ai/avatars/bear.png",
+  "customer-manager": "/assets/ai/avatars/owl.png",
+  copywriter: "/assets/ai/avatars/cat.png",
+  designer: "/assets/ai/avatars/duck.png",
+  legal: "/assets/ai/avatars/owl.png",
+  hr: "/assets/ai/avatars/bear.png",
 };
 
 const ONBOARDING_SLIDES = [
@@ -394,6 +394,14 @@ function RoleAvatar({ id, size = "md" }: { id: string; size?: "sm" | "md" | "lg"
     );
   }
   const agent = getAgentDefinition(id);
+  const avatar = AGENT_AVATARS[id];
+  if (avatar) {
+    return (
+      <span className={`${dimensions} relative block shrink-0 overflow-hidden rounded-[16px] bg-white`}>
+        <Image src={assetPath(avatar)} alt={`Аватар: ${agent?.name || "AI-специалист"}`} fill sizes="64px" className="object-cover" />
+      </span>
+    );
+  }
   return <span className={`${dimensions} ${accentClasses(agent?.accent ?? "blue")} grid shrink-0 place-items-center rounded-[16px] text-[13px] font-bold`}>{agent?.initials ?? "AI"}</span>;
 }
 
@@ -469,15 +477,16 @@ export function AlphaPartnerPrototype() {
   const [lastFailedRequest, setLastFailedRequest] = useState<FailedRequest | null>(null);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [thinkingIndex, setThinkingIndex] = useState(0);
-  const [demoRunning, setDemoRunning] = useState(false);
-  const [demoFinished, setDemoFinished] = useState(false);
+  const [demoView, setDemoView] = useState<"none" | "product" | "finance" | "marketing" | "progress" | "next" | "prompt" | "payments">("none");
+  const [demoThinkingText, setDemoThinkingText] = useState("");
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const howItWorksRef = useRef<HTMLButtonElement>(null);
   const requestSequence = useRef(0);
   const clearStorageAfterReset = useRef(false);
-  const demoRunId = useRef(0);
-  const demoTimers = useRef<number[]>([]);
+  const demoSnapshot = useRef<PartnerState | null>(null);
+  const demoUiSnapshot = useRef<{ connectionStatus: ConnectionStatus; alfaBusinessConnected: boolean; onboardingOpen: boolean } | null>(null);
+  const demoMessageSequence = useRef(0);
 
   const activeIsPartner = state.activeAgentId === "alpha-partner";
   const activeDefinition = activeIsPartner ? null : getAgentDefinition(state.activeAgentId);
@@ -531,6 +540,7 @@ export function AlphaPartnerPrototype() {
 
   useEffect(() => {
     if (!hydrated) return;
+    if (demoSnapshot.current) return;
     try {
       if (clearStorageAfterReset.current) {
         clearStorageAfterReset.current = false;
@@ -547,7 +557,7 @@ export function AlphaPartnerPrototype() {
     if (!hydrated) return;
     let cancelled = false;
     void checkChatHealth().then((health) => {
-      if (cancelled) return;
+      if (cancelled || demoSnapshot.current) return;
       if (health.status === "ok" && health.configured && health.oauthAvailable && health.modelAvailable) {
         setConnectionStatus("connected");
         setSystemNotice("");
@@ -562,7 +572,7 @@ export function AlphaPartnerPrototype() {
   useEffect(() => {
     const element = chatRef.current;
     if (element) element.scrollTo({ top: element.scrollHeight, behavior: "smooth" });
-  }, [activeMessages.length, state.phase, loading, state.paymentState]);
+  }, [activeMessages.length, state.phase, loading, state.paymentState, demoView]);
 
   useEffect(() => {
     if (!loading) return;
@@ -578,12 +588,6 @@ export function AlphaPartnerPrototype() {
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 104)}px`;
   }, [input]);
-
-  useEffect(() => () => {
-    demoRunId.current += 1;
-    demoTimers.current.forEach((timer) => window.clearTimeout(timer));
-    demoTimers.current = [];
-  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -605,121 +609,161 @@ export function AlphaPartnerPrototype() {
         ? 1
         : 0;
 
-  function clearDemoSequence() {
-    demoRunId.current += 1;
-    demoTimers.current.forEach((timer) => window.clearTimeout(timer));
-    demoTimers.current = [];
+  function demoMessage(role: Message["role"], text: string): Message {
+    demoMessageSequence.current += 1;
+    return { id: `demo-${demoMessageSequence.current}`, role, text, source: "demo" };
+  }
+
+  function applyDemoStep(step: DemoStep) {
+    if (step.type === "reset") {
+      demoMessageSequence.current = 0;
+      setState({ ...createInitialState(), partnerHistory: [] });
+      setInput("");
+      setInputError("");
+      setLoading(false);
+      setDemoView("none");
+      setTeamPanelOpen(false);
+      setEditingTeam(false);
+      setOnboardingOpen(false);
+      setSystemNotice("");
+      setConnectionStatus("demo");
+      return;
+    }
+    if (step.type === "setLoading") {
+      setLoading(step.value);
+      setDemoThinkingText(step.label ?? "");
+      if (step.value) setDemoView("none");
+      return;
+    }
+    if (step.type === "sendUser") {
+      setInput("");
+      setState((current) => {
+        const agentId = step.agentId ?? current.activeAgentId;
+        const message = demoMessage("user", step.text);
+        if (agentId === "alpha-partner") return { ...current, partnerHistory: [...current.partnerHistory, message] };
+        return {
+          ...current,
+          agentThreads: appendAgentMessage(current.agentThreads, agentId, message),
+          agentStatuses: { ...current.agentStatuses, [agentId]: "working" },
+          agentTasks: { ...current.agentTasks, [agentId]: step.text },
+        };
+      });
+      return;
+    }
+    if (step.type === "agentMessage") {
+      setState((current) => {
+        const agentId = step.agentId ?? current.activeAgentId;
+        const message = demoMessage("agent", step.text);
+        return agentId === "alpha-partner"
+          ? { ...current, partnerHistory: [...current.partnerHistory, message] }
+          : { ...current, agentThreads: appendAgentMessage(current.agentThreads, agentId, message) };
+      });
+      return;
+    }
+    if (step.type === "showPassport") {
+      setState((current) => ({ ...current, passport: { ...DEMO_PASSPORT }, phase: "context_ready" }));
+      setDemoView("none");
+      return;
+    }
+    if (step.type === "showTeamProposal") {
+      setState((current) => ({ ...current, passport: { ...DEMO_PASSPORT }, team: DEMO_TEAM.map((member) => ({ ...member })), phase: "team_review" }));
+      return;
+    }
+    if (step.type === "confirmTeam") {
+      const statuses = Object.fromEntries(DEMO_TEAM.map((member) => [member.id, "idle"])) as Record<string, AgentStatus>;
+      setState((current) => ({ ...current, phase: "active", teamConfirmed: true, agentStatuses: statuses }));
+      return;
+    }
+    if (step.type === "showTeam") {
+      setLoading(false);
+      setDemoView("none");
+      setTeamPanelOpen(true);
+      return;
+    }
+    if (step.type === "openAgent") {
+      setTeamPanelOpen(false);
+      setLoading(false);
+      setDemoView("none");
+      setState((current) => ({
+        ...current,
+        activeAgentId: step.agentId,
+        agentThreads: step.agentId === "alpha-partner" || current.agentThreads[step.agentId]
+          ? current.agentThreads
+          : { ...current.agentThreads, [step.agentId]: [] },
+      }));
+      return;
+    }
+    if (step.type === "showResult") {
+      const summaries: Record<DemoResultKind, ChatTeamSummary> = {
+        product: { agentId: "product", agentName: "Продуктовый специалист", summary: "Собран тест спроса: лендинг, форма предзаказа и критерий 10+ заявок за 3 дня." },
+        finance: { agentId: "finance", agentName: "Финансовый аналитик", summary: "Рассчитана цена запуска 3 490 ₽ при себестоимости 1 850 ₽." },
+        marketing: { agentId: "marketer", agentName: "Маркетолог", summary: "Выбран первый канал: три коротких видео с целью получить 10 заявок за 3 дня." },
+      };
+      const summary = summaries[step.kind];
+      setState((current) => ({
+        ...current,
+        agentStatuses: { ...current.agentStatuses, [summary.agentId]: "ready" },
+        teamSummaries: [...current.teamSummaries.filter((item) => item.agentId !== summary.agentId), summary],
+      }));
+      setDemoView(step.kind);
+      return;
+    }
+    if (step.type === "showProgress") setDemoView("progress");
+    if (step.type === "showNextStep") setDemoView("next");
+    if (step.type === "showProductPrompt") {
+      setState((current) => ({ ...current, partnerHistory: [...current.partnerHistory, demoMessage("agent", "Показать подходящий способ принимать первые оплаты?")] }));
+      setDemoView("prompt");
+    }
+    if (step.type === "showPaymentOptions") setDemoView("payments");
+  }
+
+  const demo = useDemoRunner({
+    steps: DEMO_STEPS,
+    onStep: applyDemoStep,
+    onType: setInput,
+  });
+  const demoRunning = demo.status === "running" || demo.status === "paused";
+  const demoFinished = demo.status === "finished";
+  const demoActive = demoRunning || demoFinished;
+
+  function startDemoScenario() {
+    if (demoRunning) return;
+    if (!demoSnapshot.current) {
+      demoSnapshot.current = state;
+      demoUiSnapshot.current = { connectionStatus, alfaBusinessConnected, onboardingOpen };
+    }
+    requestSequence.current += 1;
+    setProductModal(null);
+    setAlfaBusinessOpen(false);
+    setBusinessDataInfoOpen(false);
+    setResetOpen(false);
+    setAlfaBusinessConnected(false);
+    demo.start();
+  }
+
+  function closeDemoScenario(message?: string) {
+    demo.stop();
+    requestSequence.current += 1;
+    const snapshot = demoSnapshot.current;
+    const uiSnapshot = demoUiSnapshot.current;
+    demoSnapshot.current = null;
+    demoUiSnapshot.current = null;
+    setLoading(false);
+    setDemoView("none");
+    setTeamPanelOpen(false);
+    setInput("");
+    setDemoThinkingText("");
+    if (snapshot) setState(snapshot);
+    if (uiSnapshot) {
+      setConnectionStatus(uiSnapshot.connectionStatus);
+      setAlfaBusinessConnected(uiSnapshot.alfaBusinessConnected);
+      setOnboardingOpen(uiSnapshot.onboardingOpen);
+    }
+    if (message) setToast(message);
   }
 
   function stopDemoScenario() {
-    clearDemoSequence();
-    setDemoRunning(false);
-    setDemoFinished(true);
-    setLoading(false);
-    setToast("Демонстрация остановлена — можно продолжить вручную");
-  }
-
-  function startDemoScenario() {
-    clearDemoSequence();
-    requestSequence.current += 1;
-    const runId = demoRunId.current;
-    const demoTeam = buildFallbackTeam(DEMO_PASSPORT);
-    const statuses = Object.fromEntries(demoTeam.map((member) => [member.id, "idle"])) as Record<string, AgentStatus>;
-    const marketerResult = "Для первого теста не запускайте рекламу сразу. Соберите список из 15 локальных брендов, отправьте им короткое предложение с двумя пакетами услуг и предложите 20-минутный разбор бренда. Цель теста — получить минимум пять ответов и две встречи за семь дней.";
-    const summary = "Маркетолог предложил проверить спрос через 15 персональных обращений: цель — пять ответов и две встречи за семь дней.";
-
-    setDemoRunning(true);
-    setDemoFinished(false);
-    setThinkingIndex(0);
-    setLoading(true);
-    setInput("");
-    setInputError("");
-    setSystemNotice("");
-    setTeamPanelOpen(false);
-    setEditingTeam(false);
-    setAlfaBusinessConnected(false);
-    try {
-      window.localStorage.removeItem(ALFA_BUSINESS_STORAGE_KEY);
-    } catch {
-      // Демонстрация работает и без доступа к localStorage.
-    }
-    setState(createInitialState());
-
-    function schedule(delay: number, update: (current: PartnerState) => PartnerState, after?: () => void) {
-      const timer = window.setTimeout(() => {
-        if (demoRunId.current !== runId) return;
-        setState(update);
-        after?.();
-      }, delay);
-      demoTimers.current.push(timer);
-    }
-
-    schedule(900, (current) => ({
-      ...current,
-      passport: { ...current.passport, projectType: DEMO_PASSPORT.projectType, direction: DEMO_PASSPORT.direction, product: DEMO_PASSPORT.product },
-      partnerHistory: [...current.partnerHistory, makeMessage("user", "Хочу запустить небольшую креативную студию: делать брендинг и контент для молодых компаний.", "demo")],
-    }));
-    schedule(2700, (current) => ({ ...current, partnerHistory: [...current.partnerHistory, makeMessage("agent", "Понял: вы запускаете студию брендинга и контента. Кто должен стать вашим первым клиентом?", "demo")] }));
-    schedule(4500, (current) => ({
-      ...current,
-      passport: { ...current.passport, audience: DEMO_PASSPORT.audience },
-      partnerHistory: [...current.partnerHistory, makeMessage("user", "Небольшие локальные бренды и молодые проекты, которым нужна понятная упаковка.", "demo")],
-    }));
-    schedule(6300, (current) => ({ ...current, partnerHistory: [...current.partnerHistory, makeMessage("agent", "Хорошо. Что уже готово для запуска и какие ресурсы у вас есть?", "demo")] }));
-    schedule(8100, (current) => ({
-      ...current,
-      passport: { ...current.passport, stage: DEMO_PASSPORT.stage, prepared: DEMO_PASSPORT.prepared, resources: DEMO_PASSPORT.resources, budget: DEMO_PASSPORT.budget },
-      partnerHistory: [...current.partnerHistory, makeMessage("user", "Нас двое: дизайнер и контент-специалист. Есть портфолио и три тестовых кейса. На первый месяц готовы потратить до 80 000 ₽.", "demo")],
-    }));
-    schedule(9900, (current) => ({ ...current, partnerHistory: [...current.partnerHistory, makeMessage("agent", "Какой первый измеримый результат вы хотите получить?", "demo")] }));
-    schedule(11700, (current) => ({
-      ...current,
-      passport: { ...DEMO_PASSPORT },
-      partnerHistory: [...current.partnerHistory, makeMessage("user", "Найти первые три платных проекта и понять, как упаковать предложение и считать экономику.", "demo")],
-    }));
-    schedule(13500, (current) => ({
-      ...current,
-      phase: "context_ready",
-      team: demoTeam,
-      partnerHistory: [...current.partnerHistory, makeMessage("agent", "Контекст собран. Я вижу три главные задачи: проверить спрос, упаковать предложение и посчитать экономику запуска. Подбираю специалистов.", "demo")],
-    }));
-    schedule(15500, (current) => ({ ...current, phase: "team_review" }));
-    schedule(17500, (current) => ({
-      ...current,
-      phase: "active",
-      teamConfirmed: true,
-      agentStatuses: statuses,
-      partnerHistory: [...current.partnerHistory, makeMessage("agent", `Команда готова: ${demoTeam.map((member) => member.name.toLowerCase()).join(", ")}. Сейчас покажу, как поставить задачу одному специалисту.`, "demo")],
-    }));
-    schedule(19500, (current) => ({
-      ...current,
-      activeAgentId: "marketer",
-      agentThreads: { ...current.agentThreads, marketer: [makeMessage("agent", agentGreeting("marketer", DEMO_PASSPORT), "demo")] },
-      agentStatuses: { ...current.agentStatuses, marketer: "waiting" },
-    }));
-    schedule(21300, (current) => ({
-      ...current,
-      agentThreads: { ...current.agentThreads, marketer: [...(current.agentThreads.marketer ?? []), makeMessage("user", "Подготовь простой способ проверить спрос на услуги студии без большого рекламного бюджета.", "demo")] },
-      agentStatuses: { ...current.agentStatuses, marketer: "working" },
-      agentTasks: { ...current.agentTasks, marketer: "Проверить спрос на услуги креативной студии" },
-    }));
-    schedule(23300, (current) => ({
-      ...current,
-      agentThreads: { ...current.agentThreads, marketer: [...(current.agentThreads.marketer ?? []), makeMessage("agent", marketerResult, "demo")] },
-      agentStatuses: { ...current.agentStatuses, marketer: "ready" },
-    }));
-    schedule(25500, (current) => ({
-      ...current,
-      activeAgentId: "alpha-partner",
-      teamSummaries: [...current.teamSummaries, { agentId: "marketer", agentName: "Маркетолог", summary }],
-      partnerHistory: [...current.partnerHistory, makeMessage("agent", "Маркетолог подготовил проверку спроса, а я сохранил результат в общем контексте. Следующий шаг — провести 15 персональных обращений и вернуться с числом ответов и встреч. Дальше я обновлю маршрут.", "demo")],
-    }), () => {
-      setDemoRunning(false);
-      setDemoFinished(true);
-      setLoading(false);
-      setToast("Демонстрационный сценарий завершён");
-      demoTimers.current = [];
-    });
+    closeDemoScenario("Демонстрация остановлена — прежнее состояние восстановлено");
   }
 
   function openAgent(agentId: string) {
@@ -981,6 +1025,7 @@ export function AlphaPartnerPrototype() {
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (demoActive) return;
     void submitAnswer(input);
   }
 
@@ -1042,7 +1087,9 @@ export function AlphaPartnerPrototype() {
   }
 
   function restart() {
-    clearDemoSequence();
+    demo.stop();
+    demoSnapshot.current = null;
+    demoUiSnapshot.current = null;
     requestSequence.current += 1;
     clearStorageAfterReset.current = true;
     try {
@@ -1051,8 +1098,7 @@ export function AlphaPartnerPrototype() {
       // Состояние интерфейса всё равно сбрасывается, если localStorage недоступен.
     }
     setLoading(false);
-    setDemoRunning(false);
-    setDemoFinished(false);
+    setDemoView("none");
     setState(createInitialState());
     setAlfaBusinessConnected(false);
     setDismissedRecommendations([]);
@@ -1148,7 +1194,7 @@ export function AlphaPartnerPrototype() {
       <div className="bg-[#f7f7f8]">
        <Container className="ai-agent-container">
         <div className="mx-auto max-w-[1180px] py-16 sm:py-20 laptop:py-24">
-          <div id="alpha-partner-chat" className="ai-agent-chat scroll-mt-5 flex h-[clamp(540px,70dvh,700px)] min-h-[540px] max-h-[700px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(0,0,0,.07)] sm:min-h-[580px]">
+          <div id="alpha-partner-chat" className="ai-agent-chat scroll-mt-5 flex h-[clamp(620px,82dvh,900px)] min-h-[620px] max-h-[900px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(0,0,0,.07)] sm:min-h-[720px]">
             <div className="h-2 shrink-0 bg-alfa-red" aria-hidden="true" />
             <header className="flex min-h-[76px] items-center justify-between gap-3 px-4 sm:px-6">
               <div className="flex min-w-0 items-center gap-3">
@@ -1169,7 +1215,7 @@ export function AlphaPartnerPrototype() {
               </div>
             </header>
 
-            {(activeIsPartner || demoRunning) && (
+            {activeIsPartner && !demoActive && (
               <div className="shrink-0 border-t border-black/5 px-4 py-2.5 sm:px-6">
                 <div className="mx-auto flex max-w-[920px] flex-wrap items-center gap-2.5 sm:flex-nowrap sm:gap-3">
                   <p className="min-w-0 flex-1 truncate text-[10px] font-bold text-black/55 sm:flex-none sm:text-[11px]">
@@ -1178,8 +1224,10 @@ export function AlphaPartnerPrototype() {
                   <div className="order-3 h-1.5 basis-full overflow-hidden rounded-full bg-black/8 sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto" aria-hidden="true">
                     <div className="h-full rounded-full bg-alfa-red transition-[width] duration-300" style={{ width: `${setupComplete ? 100 : setupStep * 20}%` }} />
                   </div>
-                  {demoRunning && <button type="button" onClick={stopDemoScenario} className="min-h-9 shrink-0 rounded-[11px] bg-black px-3 text-[10px] font-bold text-white">Остановить демо</button>}
-                  {!demoRunning && demoFinished && <button type="button" onClick={startDemoScenario} className="min-h-9 shrink-0 rounded-[11px] bg-alfa-red px-3 text-[10px] font-bold text-white">Повторить демо</button>}
+                   {demoActive && <span className="rounded-full bg-alfa-red px-2.5 py-1.5 text-[8px] font-black tracking-[.12em] text-white">DEMO</span>}
+                   {demoRunning && <div className="flex items-center gap-1 rounded-[11px] bg-black/5 p-1">{[0.75, 1, 1.25].map((value) => <button key={value} type="button" onClick={() => demo.setSpeed(value)} className={`min-h-7 rounded-[8px] px-2 text-[9px] font-bold ${demo.speed === value ? "bg-white text-black shadow-sm" : "text-black/42"}`}>{value}x</button>)}</div>}
+                   {demoRunning && <button type="button" onClick={demo.togglePause} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-[11px] bg-black/5 px-3 text-[10px] font-bold text-black">{demo.status === "paused" ? <Play size={12} fill="currentColor" /> : <Pause size={12} />}{demo.status === "paused" ? "Продолжить" : "Пауза"}</button>}
+                   {demoRunning && <button type="button" onClick={stopDemoScenario} className="min-h-9 shrink-0 rounded-[11px] bg-black px-3 text-[10px] font-bold text-white">Остановить</button>}
                 </div>
               </div>
             )}
@@ -1227,7 +1275,7 @@ export function AlphaPartnerPrototype() {
                       <span className="flex gap-1" aria-hidden="true">
                         {[0, 1, 2].map((dot) => <span key={dot} className="alpha-thinking-dot h-1.5 w-1.5 rounded-full bg-alfa-red" style={{ animationDelay: `${dot * 140}ms` }} />)}
                       </span>
-                      <span>{thinkingMessages[thinkingIndex]}</span>
+                      <span>{demoRunning && demoThinkingText ? demoThinkingText : thinkingMessages[thinkingIndex]}</span>
                     </div>
                   </div>
                 )}
@@ -1275,13 +1323,15 @@ export function AlphaPartnerPrototype() {
                     {activeDefinition.quickTasks.map((task) => <button key={task} type="button" onClick={() => void submitAnswer(task)} className="min-h-11 rounded-full bg-white px-4 text-[12px] font-bold ring-1 ring-black/10 hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue">{task}</button>)}
                   </div>
                 )}
+
+                {demoActive && demoView !== "none" && <DemoSceneCard view={demoView} finished={demoFinished} onShowPayments={() => setDemoView("payments")} onRepeat={startDemoScenario} onClose={() => closeDemoScenario()} />}
               </div>
             </div>
 
             <form onSubmit={onSubmit} className="border-t border-black/5 bg-white p-3 sm:p-4">
               <div className="mx-auto max-w-[920px]">
                 <div className="flex items-end gap-2 rounded-[17px] bg-white p-2 shadow-[0_4px_20px_rgba(0,0,0,.06)] ring-1 ring-black/12 transition-shadow focus-within:shadow-[0_0_0_2px_var(--future-blue)] focus-within:ring-transparent">
-                  <textarea ref={inputRef} value={input} disabled={loading} onChange={(event) => { setInput(event.target.value); if (inputError) setInputError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitAnswer(input); } }} rows={1} maxLength={MAX_INPUT_LENGTH + 1} placeholder={activeIsPartner ? "Расскажите о бизнесе или задаче…" : "Опишите задачу специалисту…"} className="min-h-12 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 text-[13px] font-medium leading-6 outline-none placeholder:text-black/42 disabled:opacity-60" aria-label={activeIsPartner ? "Сообщение Альфа-Партнёру" : `Задача для ${activeDefinition?.name || "специалиста"}`} aria-describedby={inputError ? "alpha-input-error" : "alpha-input-hint"} />
+                  <textarea ref={inputRef} value={input} disabled={loading} readOnly={demoActive} onChange={(event) => { setInput(event.target.value); if (inputError) setInputError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!demoActive) void submitAnswer(input); } }} rows={1} maxLength={MAX_INPUT_LENGTH + 1} placeholder={activeIsPartner ? "Расскажите о бизнесе или задаче…" : "Опишите задачу специалисту…"} className="min-h-12 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 text-[13px] font-medium leading-6 outline-none placeholder:text-black/42 disabled:opacity-60" aria-label={activeIsPartner ? "Сообщение Альфа-Партнёру" : `Задача для ${activeDefinition?.name || "специалиста"}`} aria-describedby={inputError ? "alpha-input-error" : "alpha-input-hint"} />
                   <button type="submit" disabled={loading} className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] bg-alfa-red text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red" aria-label="Отправить сообщение"><Send size={17} /></button>
                 </div>
                 <div className="mt-2 flex min-h-4 items-center justify-between px-2 text-[9px]">
@@ -1356,7 +1406,7 @@ export function AlphaPartnerPrototype() {
       {state.teamConfirmed && <div className="bg-white"><Container className="ai-agent-container"><div className="mx-auto max-w-[1180px]"><TeamShowcase team={state.team} statuses={state.agentStatuses} busy={loading} onOpen={openAgent} onOpenAll={() => setTeamPanelOpen(true)} /></div></Container></div>}
       <AlfaBusinessSection connected={alfaBusinessConnected} onConnect={() => setAlfaBusinessOpen(true)} onExplain={() => setBusinessDataInfoOpen(true)} />
 
-      {teamPanelOpen && <><TeamPanel state={state} onClose={() => setTeamPanelOpen(false)} onOpen={openAgent} onOpenPlans={openPlans} /><TeamKitDownloadDock onDownload={downloadTeamKit} /></>}
+      {teamPanelOpen && <><TeamPanel state={state} onClose={() => setTeamPanelOpen(false)} onOpen={openAgent} onOpenPlans={openPlans} />{!demoActive && <TeamKitDownloadDock onDownload={downloadTeamKit} />}</>}
       {onboardingOpen && <OnboardingCarousel onClose={closeOnboarding} onStart={closeOnboarding} />}
       {resetOpen && <ConfirmModal title="Начать заново?" text="Будут удалены чат, паспорт бизнеса, команда, результаты специалистов и подключённые демо-данные Альфа-Бизнеса. Онбординг повторно не появится." confirmLabel="Удалить всё и начать" onConfirm={restart} onClose={() => setResetOpen(false)} />}
       {productModal && <ProductConnectModal recommendation={productModal} detailsOpen={productDetailsOpen} onShowDetails={() => setProductDetailsOpen(true)} onClose={() => { setProductModal(null); setProductDetailsOpen(false); }} />}
@@ -1379,8 +1429,8 @@ function PartnerWelcomeCard({ showActions, onSelect, onDemo }: { showActions: bo
         {showActions && (
           <div className="mt-5 space-y-2.5">
             <button type="button" onClick={onDemo} className="flex min-h-14 w-full items-center justify-between gap-4 rounded-[13px] bg-alfa-red px-4 py-3 text-left text-[12px] font-bold leading-4 text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-5 sm:text-[13px]">
-              <span><span className="block text-[8px] uppercase tracking-[0.1em] text-white/60 sm:text-[9px]">Посмотреть всё автоматически</span><span className="mt-1 block">Демонстрационный сценарий: {DEMO_SCENARIO_TITLE}</span></span>
-              <span className="shrink-0 text-[10px] text-white/65">≈ 26 сек →</span>
+              <span><span className="block text-[8px] uppercase tracking-[0.1em] text-white/60 sm:text-[9px]">Посмотреть всё автоматически</span><span className="mt-1 block">Демонстрационный сценарий: запуск бренда одежды</span></span>
+              <span className="shrink-0 text-[10px] text-white/65">≈ 50 сек →</span>
             </button>
             <div className="grid gap-2 sm:grid-cols-3">
               {START_REPLIES.map((reply, index) => (
@@ -1392,6 +1442,71 @@ function PartnerWelcomeCard({ showActions, onSelect, onDemo }: { showActions: bo
       </div>
     </section>
   );
+}
+
+function DemoSceneCard({
+  view,
+  finished,
+  onShowPayments,
+  onRepeat,
+  onClose,
+}: {
+  view: "product" | "finance" | "marketing" | "progress" | "next" | "prompt" | "payments";
+  finished: boolean;
+  onShowPayments: () => void;
+  onRepeat: () => void;
+  onClose: () => void;
+}) {
+  const resultContent = {
+    product: {
+      eyebrow: "Практический результат",
+      title: "Тест спроса",
+      tone: "bg-future-green text-black",
+      rows: [
+        ["Оффер", "Первая коллекция локального бренда. Предзаказ без полной оплаты."],
+        ["Что проверяем", "Интерес к продукту до производства партии"],
+        ["Тест", "Лендинг + короткий оффер + форма предзаказа"],
+        ["Критерий успеха", "10+ заявок за 3 дня"],
+        ["Результат", "Готовый тест, который можно запустить сегодня"],
+      ],
+    },
+    finance: {
+      eyebrow: "Практический результат",
+      title: "Экономика запуска",
+      tone: "bg-future-purple text-white",
+      rows: [
+        ["Себестоимость", "1 850 ₽"],
+        ["Цена запуска", "3 490 ₽"],
+        ["Маржа до доп. расходов", "1 640 ₽"],
+        ["Рекомендация", "Не снижать цену ниже 3 290 ₽ на первом тесте"],
+      ],
+    },
+    marketing: {
+      eyebrow: "Практический результат",
+      title: "Первый маркетинговый тест",
+      tone: "bg-future-blue text-white",
+      rows: [
+        ["Канал", "Короткие видео"],
+        ["Аудитория", "18–25 лет"],
+        ["Оффер", "Предзаказ первой ограниченной коллекции"],
+        ["Цель", "10 заявок за 3 дня"],
+        ["Следующее действие", "Снять и опубликовать 3 коротких видео"],
+      ],
+    },
+  } as const;
+
+  if (view === "product" || view === "finance" || view === "marketing") {
+    const content = resultContent[view];
+    return <section className={`mr-auto w-full max-w-[680px] rounded-[24px] p-5 shadow-sm sm:p-6 ${content.tone}`}><p className="text-[9px] font-bold uppercase tracking-[.1em] opacity-55">{content.eyebrow}</p><div className="mt-2 flex items-end justify-between gap-4"><h2 className="text-[25px] font-black tracking-[-.04em]">{content.title}</h2>{view === "finance" && <strong className="text-[32px] font-black leading-none text-future-green">3 490 ₽</strong>}</div><dl className="mt-5 grid gap-px overflow-hidden rounded-[16px] bg-white/20 sm:grid-cols-2">{content.rows.map(([label, value], index) => <div key={label} className={`bg-white/10 px-4 py-3 ${content.rows.length % 2 === 1 && index === content.rows.length - 1 ? "sm:col-span-2" : ""}`}><dt className="text-[8px] font-black uppercase tracking-[.09em] opacity-55">{label}</dt><dd className="mt-1 text-[12px] font-bold leading-5">{value}</dd></div>)}</dl></section>;
+  }
+
+  if (view === "progress") return <section className="mr-auto w-full max-w-[620px] rounded-[24px] bg-black p-5 text-white sm:p-6"><p className="text-[9px] font-bold uppercase tracking-[.1em] text-future-green">Общий контекст обновлён</p><h2 className="mt-2 text-[25px] font-black tracking-[-.04em]">Что уже сделано</h2><ul className="mt-5 grid gap-2 text-[13px] font-bold">{["Спрос проверен", "Цена рассчитана", "Первый канал протестирован"].map((item) => <li key={item} className="flex items-center gap-3 rounded-[13px] bg-white/8 px-4 py-3"><Check size={15} className="text-future-green" />{item}</li>)}</ul><div className="mt-4 flex items-center justify-between rounded-[16px] bg-future-green px-4 py-4 text-black"><strong className="text-[13px]">Появились первые предзаказы</strong><span className="text-[20px] font-black">3</span></div></section>;
+
+  if (view === "next") return <section className="mr-auto w-full max-w-[660px] overflow-hidden rounded-[24px] bg-alfa-red text-white shadow-[0_12px_34px_rgba(239,49,36,.2)]"><div className="p-6 sm:p-7"><p className="text-[9px] font-bold uppercase tracking-[.12em] text-white/60">Следующий шаг</p><h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-.045em]">Настроить приём оплаты</h2><p className="mt-4 max-w-[560px] text-[13px] font-medium leading-6 text-white/78">У бизнеса появились первые предзаказы — теперь нужно дать клиентам способ оплатить заказ.</p></div></section>;
+
+  if (view === "prompt") return <button type="button" onClick={onShowPayments} className="mr-auto inline-flex min-h-12 items-center gap-2 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white shadow-sm">Показать варианты <ArrowRight size={15} /></button>;
+
+  return <section className="mr-auto w-full max-w-[700px] overflow-hidden rounded-[26px] bg-white shadow-[0_12px_38px_rgba(0,0,0,.09)] ring-1 ring-black/8"><div className="h-2 bg-alfa-red" /><div className="p-5 sm:p-6"><p className="text-[9px] font-bold uppercase tracking-[.1em] text-alfa-red">Приём оплаты</p><h2 className="mt-2 text-[27px] font-black tracking-[-.045em]">Подходящие варианты</h2><div className="mt-5 grid gap-2 sm:grid-cols-3"><div className="rounded-[18px] bg-alfa-red p-4 text-white ring-4 ring-alfa-red/12"><p className="text-[9px] font-black uppercase tracking-[.08em] text-white/60">Рекомендуем</p><h3 className="mt-2 text-[15px] font-bold">Платёжная ссылка</h3><p className="mt-2 text-[10px] leading-4 text-white/72">Подходит для первых предзаказов</p></div><div className="rounded-[18px] bg-muted p-4"><p className="text-[9px] font-black uppercase tracking-[.08em] text-black/38">Вариант 2</p><h3 className="mt-2 text-[15px] font-bold">СБП</h3><p className="mt-2 text-[10px] leading-4 text-black/52">Оплата по QR / ссылке</p></div><div className="rounded-[18px] bg-muted p-4"><p className="text-[9px] font-black uppercase tracking-[.08em] text-black/38">Вариант 3</p><h3 className="mt-2 text-[15px] font-bold">Эквайринг</h3><p className="mt-2 text-[10px] leading-4 text-black/52">Когда появится стабильный поток продаж</p></div></div><button type="button" className="mt-5 min-h-12 w-full rounded-[14px] bg-black px-5 text-[12px] font-bold text-white" onClick={() => undefined}>Перейти в Альфа-Бизнес</button><p className="mt-2 text-center text-[9px] text-black/38">Подключение — только после подтверждения пользователя</p>{finished && <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-black/8 pt-4"><strong className="mr-auto text-[11px]">Демо завершено</strong><button type="button" onClick={onRepeat} className="min-h-9 rounded-[11px] bg-alfa-red px-4 text-[10px] font-bold text-white">Повторить</button><button type="button" onClick={onClose} className="min-h-9 rounded-[11px] bg-muted px-4 text-[10px] font-bold">Закрыть</button></div>}</div></section>;
 }
 
 function TeamShowcase({ team, statuses, busy, onOpen, onOpenAll }: { team: ChatTeamMember[]; statuses: Record<string, AgentStatus>; busy: boolean; onOpen: (id: string) => void; onOpenAll: () => void }) {
@@ -1618,13 +1733,15 @@ function OnboardingCarousel({ onClose, onStart }: { onClose: () => void; onStart
 
 function ContextCard({ passport, onBuild }: { passport: BusinessPassport; onBuild: () => void }) {
   const rows = [
-    ["Проект", passport.product || passport.direction || "Пока не определено"],
+    ["Проект", passport.direction || passport.product || "Пока не определено"],
+    ["Продукт", passport.product || "Пока не определено"],
+    ["Аудитория", passport.audience || "Пока не определено"],
     ["Стадия", passport.stage || "Пока не определено"],
     ["Цель", passport.goal || "Пока не определено"],
-    ["Главная проблема", passport.problems || "Уточняется по контексту"],
-    ["Делегировать", passport.delegationTasks || passport.goal || "Пока не определено"],
+    ["Бюджет", passport.budget || passport.resources || "Пока не определено"],
+    ["Ограничение", passport.problems || "Уточняется по контексту"],
   ];
-  return <div className="rounded-[24px] bg-future-blue p-5 text-white sm:p-6"><div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-[14px] bg-future-green text-black"><Check size={20} /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/65">Этап завершён</p><h2 className="mt-1 text-[21px] font-bold">Контекст бизнеса собран</h2></div></div><dl className="mt-5 grid gap-px overflow-hidden rounded-[16px] bg-white/15 sm:grid-cols-2">{rows.map(([label, value]) => <div key={label} className="bg-white/8 px-4 py-3 last:sm:col-span-2"><dt className="text-[9px] font-bold uppercase tracking-[0.08em] text-white/50">{label}</dt><dd className="mt-1 text-[12px] font-bold">{value}</dd></div>)}</dl><button type="button" onClick={onBuild} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white sm:w-auto">Собрать AI-команду <Users size={17} /></button></div>;
+  return <div className="rounded-[24px] bg-future-blue p-5 text-white sm:p-6"><div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-[14px] bg-future-green text-black"><Check size={20} /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/65">Этап завершён</p><h2 className="mt-1 text-[21px] font-bold">Паспорт бизнеса</h2></div></div><dl className="mt-5 grid gap-px overflow-hidden rounded-[16px] bg-white/15 sm:grid-cols-2">{rows.map(([label, value], index) => <div key={label} className={`bg-white/8 px-4 py-3 ${index === rows.length - 1 ? "sm:col-span-2" : ""}`}><dt className="text-[9px] font-bold uppercase tracking-[0.08em] text-white/50">{label}</dt><dd className="mt-1 text-[12px] font-bold">{value}</dd></div>)}</dl><button type="button" onClick={onBuild} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-alfa-red px-5 text-[12px] font-bold text-white sm:w-auto">Собрать AI-команду <Users size={17} /></button></div>;
 }
 
 function TeamProposal({ team, editing, passport, onEdit, onCancelEdit, onRemove, onAdd, onConfirm, onOpen }: { team: ChatTeamMember[]; editing: boolean; passport: BusinessPassport; onEdit: () => void; onCancelEdit: () => void; onRemove: (id: string) => void; onAdd: (id: string) => void; onConfirm: () => void; onOpen: (id: string) => void }) {
