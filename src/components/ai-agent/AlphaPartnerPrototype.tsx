@@ -1194,24 +1194,25 @@ export function AlphaPartnerPrototype() {
       <div className="bg-[#f7f7f8]">
        <Container className="ai-agent-container">
         <div className="mx-auto max-w-[1180px] py-16 sm:py-20 laptop:py-24">
-          <div id="alpha-partner-chat" className="ai-agent-chat scroll-mt-5 flex h-[clamp(620px,82dvh,900px)] min-h-[620px] max-h-[900px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(0,0,0,.07)] sm:min-h-[720px]">
+          <div id="alpha-partner-chat" className="ai-agent-chat scroll-mt-5 flex h-[90dvh] min-h-[620px] max-h-[920px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(0,0,0,.07)] sm:h-[clamp(720px,84dvh,920px)] sm:min-h-[720px]">
             <div className="h-2 shrink-0 bg-alfa-red" aria-hidden="true" />
-            <header className="flex min-h-[76px] items-center justify-between gap-3 px-4 sm:px-6">
-              <div className="flex min-w-0 items-center gap-3">
-                <RoleAvatar id={state.activeAgentId} />
-                <div className="min-w-0">
+            <header className="flex min-h-[68px] items-center justify-between gap-2 px-3 py-2 sm:min-h-[76px] sm:gap-3 sm:px-6 sm:py-0">
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden sm:gap-3">
+                <span className="sm:hidden"><RoleAvatar id={state.activeAgentId} size="sm" /></span>
+                <span className="hidden sm:block"><RoleAvatar id={state.activeAgentId} /></span>
+                <div className="min-w-0 flex-1 overflow-hidden">
                   <div className="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-x-2">
-                    <p className="whitespace-nowrap text-[12px] font-bold sm:text-[16px]">{activeIsPartner ? <>AI-агент <span className="text-alfa-red">Альфа-Партнёр</span></> : activeMember?.name || activeDefinition?.name}</p>
-                    <ConnectionBadge status={connectionStatus} />
+                    <p className="max-w-full truncate text-[12px] font-bold sm:text-[16px]"><span className="sm:hidden">{activeIsPartner ? <span className="text-alfa-red">Альфа-Партнёр</span> : activeMember?.name || activeDefinition?.name}</span><span className="hidden whitespace-nowrap sm:inline">{activeIsPartner ? <>AI-агент <span className="text-alfa-red">Альфа-Партнёр</span></> : activeMember?.name || activeDefinition?.name}</span></p>
+                    <span className="hidden sm:inline"><ConnectionBadge status={connectionStatus} /></span>
                   </div>
-                  <p className="truncate text-[10px] text-black/45 sm:text-[12px]">{activeIsPartner ? "Изучает бизнес и координирует команду" : activeDefinition?.description}</p>
+                  <p className="truncate text-[9px] text-black/42 sm:text-[12px] sm:text-black/45">{activeIsPartner ? "Координирует AI-команду" : activeDefinition?.description}</p>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 {!activeIsPartner && <button type="button" disabled={loading} onClick={() => openAgent("alpha-partner")} className="hidden min-h-11 items-center gap-2 rounded-full bg-muted px-4 text-[11px] font-bold hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue sm:inline-flex"><ArrowLeft size={14} />К Альфа-Партнёру</button>}
-                {!activeIsPartner && <button type="button" disabled={loading} onClick={() => openAgent("alpha-partner")} className="grid h-11 w-11 place-items-center rounded-full bg-muted text-black disabled:cursor-not-allowed disabled:opacity-40 sm:hidden" aria-label="Вернуться к Альфа-Партнёру"><ArrowLeft size={17} /></button>}
-                {state.teamConfirmed && <button type="button" disabled={loading} onClick={() => setTeamPanelOpen(true)} aria-label={`Моя команда · ${state.team.length}`} className="inline-flex min-h-11 items-center gap-2 rounded-[14px] bg-black px-3.5 text-[11px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue"><Users size={15} /><span className="hidden sm:inline">Моя команда · </span>{state.team.length}</button>}
-                <button type="button" onClick={() => setResetOpen(true)} title="Начать заново" className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-muted px-3 text-[11px] font-bold text-black/55 hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue" aria-label="Начать заново"><RotateCcw size={17} /><span className="hidden laptop:inline">Начать заново</span></button>
+                {!activeIsPartner && <button type="button" disabled={loading} onClick={() => openAgent("alpha-partner")} className="grid h-10 w-10 place-items-center rounded-[13px] bg-muted text-black disabled:cursor-not-allowed disabled:opacity-40 sm:hidden" aria-label="Вернуться к Альфа-Партнёру"><ArrowLeft size={16} /></button>}
+                {state.teamConfirmed && <button type="button" disabled={loading} onClick={() => setTeamPanelOpen(true)} aria-label={`Моя команда · ${state.team.length}`} className="inline-flex min-h-10 items-center gap-1.5 rounded-[13px] bg-black px-3 text-[11px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue sm:min-h-11 sm:gap-2 sm:rounded-[14px] sm:px-3.5"><Users size={15} /><span className="hidden sm:inline">Моя команда · </span>{state.team.length}</button>}
+                <button type="button" onClick={() => setResetOpen(true)} title="Начать заново" className="inline-flex h-10 w-10 items-center justify-center rounded-[13px] bg-muted text-[11px] font-bold text-black/55 hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-future-blue sm:h-11 sm:w-auto sm:gap-2 sm:rounded-[14px] sm:px-3" aria-label="Начать заново"><RotateCcw size={16} /><span className="hidden laptop:inline">Начать заново</span></button>
               </div>
             </header>
 
@@ -1251,7 +1252,7 @@ export function AlphaPartnerPrototype() {
             <div className="flex min-h-0 flex-1">
               <div className="flex min-w-0 flex-1 flex-col">
 
-            <div ref={chatRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f5f5f5] px-4 py-5 sm:px-6 sm:py-6" aria-live="polite">
+            <div ref={chatRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f5f5f5] px-3 py-4 sm:px-6 sm:py-6" aria-live="polite">
               <div className="mx-auto flex w-full max-w-[920px] flex-col gap-3">
                 {activeMessages.map((message, index) => activeIsPartner && index === 0 && message.role === "agent" && message.text === START_MESSAGE ? (
                   <PartnerWelcomeCard key={message.id} showActions={showPartnerWelcome} onSelect={(reply) => void submitAnswer(reply)} onDemo={startDemoScenario} />
@@ -1328,13 +1329,13 @@ export function AlphaPartnerPrototype() {
               </div>
             </div>
 
-            <form onSubmit={onSubmit} className="border-t border-black/5 bg-white p-3 sm:p-4">
+            <form onSubmit={onSubmit} className="border-t border-black/5 bg-white p-2 sm:p-4">
               <div className="mx-auto max-w-[920px]">
-                <div className="flex items-end gap-2 rounded-[17px] bg-white p-2 shadow-[0_4px_20px_rgba(0,0,0,.06)] ring-1 ring-black/12 transition-shadow focus-within:shadow-[0_0_0_2px_var(--future-blue)] focus-within:ring-transparent">
-                  <textarea ref={inputRef} value={input} disabled={loading} readOnly={demoActive} onChange={(event) => { setInput(event.target.value); if (inputError) setInputError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!demoActive) void submitAnswer(input); } }} rows={1} maxLength={MAX_INPUT_LENGTH + 1} placeholder={activeIsPartner ? "Расскажите о бизнесе или задаче…" : "Опишите задачу специалисту…"} className="min-h-12 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 text-[13px] font-medium leading-6 outline-none placeholder:text-black/42 disabled:opacity-60" aria-label={activeIsPartner ? "Сообщение Альфа-Партнёру" : `Задача для ${activeDefinition?.name || "специалиста"}`} aria-describedby={inputError ? "alpha-input-error" : "alpha-input-hint"} />
-                  <button type="submit" disabled={loading} className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] bg-alfa-red text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red" aria-label="Отправить сообщение"><Send size={17} /></button>
+                <div className="flex items-end gap-1.5 rounded-[15px] bg-white p-1.5 shadow-[0_4px_20px_rgba(0,0,0,.06)] ring-1 ring-black/12 transition-shadow focus-within:shadow-[0_0_0_2px_var(--future-blue)] focus-within:ring-transparent sm:gap-2 sm:rounded-[17px] sm:p-2">
+                  <textarea ref={inputRef} value={input} disabled={loading} readOnly={demoActive} onChange={(event) => { setInput(event.target.value); if (inputError) setInputError(""); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!demoActive) void submitAnswer(input); } }} rows={1} maxLength={MAX_INPUT_LENGTH + 1} placeholder={activeIsPartner ? "Расскажите о бизнесе или задаче…" : "Опишите задачу специалисту…"} className="min-h-10 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent px-2.5 py-2 text-[12px] font-medium leading-5 outline-none placeholder:text-black/42 disabled:opacity-60 sm:min-h-12 sm:px-3 sm:py-3 sm:text-[13px] sm:leading-6" aria-label={activeIsPartner ? "Сообщение Альфа-Партнёру" : `Задача для ${activeDefinition?.name || "специалиста"}`} aria-describedby={inputError ? "alpha-input-error" : "alpha-input-hint"} />
+                  <button type="submit" disabled={loading} className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-alfa-red text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alfa-red sm:h-12 sm:w-12 sm:rounded-[13px]" aria-label="Отправить сообщение"><Send size={16} /></button>
                 </div>
-                <div className="mt-2 flex min-h-4 items-center justify-between px-2 text-[9px]">
+                <div className="mt-1 flex min-h-3 items-center justify-between px-2 text-[8px] sm:mt-2 sm:min-h-4 sm:text-[9px]">
                   <p id={inputError ? "alpha-input-error" : "alpha-input-hint"} className={inputError ? "font-bold text-alfa-red" : "font-medium text-black/38"}>{inputError || "Можно отвечать своими словами"}</p>
                   {input.length >= 600 && <span className="ml-auto text-black/35">{input.length}/{MAX_INPUT_LENGTH}</span>}
                 </div>
